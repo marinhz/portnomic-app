@@ -11,7 +11,9 @@
 
 services:
   app:
-    ports: []  # Traefik routes via internal network; no host port needed
+    # No host port 80 - Traefik routes via Docker network. Bind to localhost:0 to avoid port conflict.
+    ports:
+      - "127.0.0.1:0:80"
     labels:
       # Traefik v2/v3 router
       - "traefik.enable=true"
@@ -25,8 +27,6 @@ services:
     networks:
       - shipflow-net
       - web
-    # Remove port mapping - Traefik routes via internal network
-    # (ports: 80 removed - handled by Traefik)
 
   postgres:
     networks:
