@@ -11,9 +11,8 @@
 
 services:
   app:
-    # No host port 80 - Traefik routes via Docker network. Bind to localhost:0 to avoid port conflict.
-    ports:
-      - "127.0.0.1:0:80"
+    # No host port binding - Traefik routes to container:80 via Docker network (same as your Next.js app).
+    ports: []
     labels:
       # Traefik v2/v3 router
       - "traefik.enable=true"

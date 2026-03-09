@@ -66,7 +66,12 @@ python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().
 
 ## Step 5: Build and start
 
+**Important:** Use both compose files. The Traefik overlay removes host port binding so the app is reached only via Traefik (no port 80 conflict).
+
 ```bash
+# Verify merged config (app should have no ports)
+docker compose -f docker-compose.prod-simple.yml -f docker-compose.traefik.yml config | grep -A5 "app:"
+
 docker compose -f docker-compose.prod-simple.yml -f docker-compose.traefik.yml build --no-cache
 docker compose -f docker-compose.prod-simple.yml -f docker-compose.traefik.yml up -d
 ```
