@@ -44,30 +44,23 @@ The config uses the `web` network (common for Traefik). If your Traefik uses a d
 ## Step 4: Create production `.env`
 
 ```bash
-cp .env.example .env
+cp .env.production.example .env
 nano .env   # or vim
 ```
 
-**Required changes for production:**
+Replace all `YOUR_*` placeholders. Generate secrets:
 
-| Variable | Example | Notes |
-|----------|---------|-------|
-| `ENVIRONMENT` | `production` | |
-| `POSTGRES_PASSWORD` | Strong random password | Generate with `openssl rand -base64 32` |
-| `JWT_SECRET` | Strong random string | Same as above |
-| `MFA_ENCRYPTION_KEY` | Fernet key | `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` |
-| `CORS_ORIGINS` | `["https://app.portnomic.com"]` | Must include your app URL |
-| `API_PUBLIC_BASE_URL` | `https://app.portnomic.com` | For myPOS webhooks |
-| `OAUTH_REDIRECT_BASE_URL` | `https://app.portnomic.com` | For OAuth callbacks |
-| `OAUTH_FRONTEND_SUCCESS_URL` | `https://app.portnomic.com/settings/integrations` | After OAuth |
-| `DATABASE_URL` | `postgresql+asyncpg://shipflow:SECRET@postgres:5432/shipflow?ssl=disable` | Use `postgres` host (Docker service) |
-| `DATABASE_URL_SYNC` | `postgresql://shipflow:SECRET@postgres:5432/shipflow?sslmode=disable` | Same |
-| `REDIS_URL` | `redis://redis:6379/0` | Use `redis` host (Docker service) |
+```bash
+# POSTGRES_PASSWORD, JWT_SECRET, WEBHOOK_INBOUND_SECRET
+openssl rand -base64 32
 
-**Optional but recommended:**
-- `LLM_API_KEY`, `LLM_API_URL`, `LLM_MODEL` – for AI parsing
-- `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` – for Gmail sync
-- `SMTP_*` – for outbound email
+# MFA_ENCRYPTION_KEY, OAUTH_STATE_ENCRYPTION_KEY
+python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+**Required:** `POSTGRES_PASSWORD`, `JWT_SECRET`, `MFA_ENCRYPTION_KEY`. Use the same `POSTGRES_PASSWORD` in both `DATABASE_URL` and `DATABASE_URL_SYNC`.
+
+**Optional:** `LLM_API_KEY`, `GOOGLE_OAUTH_*`, `SMTP_*`, `OAUTH_STATE_ENCRYPTION_KEY`, `WEBHOOK_INBOUND_SECRET`
 
 ---
 
