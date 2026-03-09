@@ -40,7 +40,12 @@ async def seed(db: AsyncSession) -> None:
     existing_tenant = await db.execute(select(Tenant).where(Tenant.id == TENANT_ID))
     tenant = existing_tenant.scalar_one_or_none()
     if tenant:
-        # Tenant already exists: add super admin user for screenshots if missing
+        # Ensure demo tenant has enterprise plan (full access for admin@portnomic.com)
+        if tenant.plan != "enterprise":
+            tenant.plan = "enterprise"
+            await db.commit()
+            print("Demo tenant plan updated to enterprise (AI settings, full limits).")
+        # Add super admin user for screenshots if missing
         existing_super = await db.execute(
             select(User).where(User.tenant_id == TENANT_ID, User.email == SUPER_ADMIN_EMAIL)
         )
@@ -67,7 +72,7 @@ async def seed(db: AsyncSession) -> None:
         print(f"  admin@portnomic.com / admin123")
         return
 
-    tenant = Tenant(id=TENANT_ID, name="Portnomic Demo", slug="demo")
+    tenant = Tenant(id=TENANT_ID, name="Portnomic Demo", slug="demo", plan="enterprise")
     db.add(tenant)
 
     admin_role = Role(
