@@ -37,15 +37,7 @@ docker network ls | grep -E "traefik|web|proxy"
 
 If your main site compose uses a network like `web` or `traefik`, note it. You'll use it in the next step.
 
-**Edit** `docker-compose.traefik.yml` and change the network name if needed:
-
-```yaml
-networks:
-  traefik:
-    external: true   # Must match your Traefik network name
-```
-
-If your Traefik network is named `web`, change `traefik` to `web` in the file.
+The config uses the `web` network (common for Traefik). If your Traefik uses a different network (e.g. `traefik`, `proxy`), edit `docker-compose.traefik.yml` and change `web` to match.
 
 ---
 

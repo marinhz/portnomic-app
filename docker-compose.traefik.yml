@@ -5,8 +5,7 @@
 #   docker compose -f docker-compose.prod-simple.yml -f docker-compose.traefik.yml up -d
 #
 # Prerequisites:
-#   - Traefik running on the same host (or Docker network)
-#   - Set TRAEFIK_NETWORK to match your Traefik network (e.g. web, traefik, proxy)
+#   - Traefik running on the same host (network: web)
 #   - DNS: app.portnomic.com → your VPS IP
 # ==============================================================================
 
@@ -25,7 +24,7 @@ services:
       - "traefik.http.services.portnomic-app.loadbalancer.server.port=80"
     networks:
       - shipflow-net
-      - traefik
+      - web
     # Remove port mapping - Traefik routes via internal network
     # (ports: 80 removed - handled by Traefik)
 
@@ -40,5 +39,5 @@ services:
 networks:
   shipflow-net:
     driver: bridge
-  traefik:
+  web:
     external: true
