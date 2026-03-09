@@ -66,14 +66,11 @@ python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().
 
 ## Step 5: Build and start
 
-**Important:** Use both compose files. The Traefik overlay removes host port binding so the app is reached only via Traefik (no port 80 conflict).
+**Use the Traefik compose file only** (standalone – no port 80 binding, no conflict with main site).
 
 ```bash
-# Verify merged config (app should have no ports)
-docker compose -f docker-compose.prod-simple.yml -f docker-compose.traefik.yml config | grep -A5 "app:"
-
-docker compose -f docker-compose.prod-simple.yml -f docker-compose.traefik.yml build --no-cache
-docker compose -f docker-compose.prod-simple.yml -f docker-compose.traefik.yml up -d
+docker compose -f docker-compose.traefik.yml build --no-cache
+docker compose -f docker-compose.traefik.yml up -d
 ```
 
 ---
@@ -81,7 +78,7 @@ docker compose -f docker-compose.prod-simple.yml -f docker-compose.traefik.yml u
 ## Step 6: Run database migrations
 
 ```bash
-docker compose -f docker-compose.prod-simple.yml -f docker-compose.traefik.yml exec app alembic upgrade head
+docker compose -f docker-compose.traefik.yml exec app alembic upgrade head
 ```
 
 ---
@@ -89,7 +86,7 @@ docker compose -f docker-compose.prod-simple.yml -f docker-compose.traefik.yml e
 ## Step 7: (Optional) Seed initial data
 
 ```bash
-docker compose -f docker-compose.prod-simple.yml -f docker-compose.traefik.yml exec app python -m app.seed
+docker compose -f docker-compose.traefik.yml exec app python -m app.seed
 ```
 
 ---
@@ -143,9 +140,9 @@ Change `letsencrypt` to your resolver name (e.g. `le`, `acme`). If you don't use
 ```bash
 cd /opt/portnomic-app
 git pull
-docker compose -f docker-compose.prod-simple.yml -f docker-compose.traefik.yml build --no-cache app
-docker compose -f docker-compose.prod-simple.yml -f docker-compose.traefik.yml up -d app
-docker compose -f docker-compose.prod-simple.yml -f docker-compose.traefik.yml exec app alembic upgrade head
+docker compose -f docker-compose.traefik.yml build --no-cache app
+docker compose -f docker-compose.traefik.yml up -d app
+docker compose -f docker-compose.traefik.yml exec app alembic upgrade head
 ```
 
 ---
@@ -154,7 +151,7 @@ docker compose -f docker-compose.prod-simple.yml -f docker-compose.traefik.yml e
 
 | Issue | Check |
 |-------|-------|
-| 502 Bad Gateway | App container running? `docker ps` |
+| 502 Bad Gateway | App container running? `docker ps -a` |
 | 404 from Traefik | Host rule matches? Network correct? |
 | CORS errors | `CORS_ORIGINS` includes `https://app.portnomic.com` |
 | DB connection failed | `DATABASE_URL` uses `postgres` host, not `localhost` |

@@ -1,42 +1,95 @@
 # ==============================================================================
 # Portnomic App - Traefik deployment (app.portnomic.com)
 # ==============================================================================
-# Usage on VPS:
-#   docker compose -f docker-compose.prod-simple.yml -f docker-compose.traefik.yml up -d
+# Standalone compose - use this file ONLY (no merge with prod-simple).
+# Usage: docker compose -f docker-compose.traefik.yml up -d
 #
 # Prerequisites:
-#   - Traefik running on the same host (network: web)
+#   - Traefik running (network: web), port 80/443
 #   - DNS: app.portnomic.com → your VPS IP
 # ==============================================================================
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-shipflow}
+      POSTGRES_USER: ${POSTGRES_USER:-shipflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - shipflow-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-shipflow}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redisdata:/data
+    networks:
+      - shipflow-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   app:
-    # No host port binding - Traefik routes to container:80 via Docker network (same as your Next.js app).
-    ports: []
-    labels:
-      # Traefik v2/v3 router
-      - "traefik.enable=true"
-      - "traefik.http.routers.portnomic-app.rule=Host(`app.portnomic.com`)"
-      - "traefik.http.routers.portnomic-app.entrypoints=websecure"
-      - "traefik.http.routers.portnomic-app.tls=true"
-      # Use default cert resolver (Let's Encrypt) if configured
-      - "traefik.http.routers.portnomic-app.tls.certresolver=letsencrypt"
-      # Service
-      - "traefik.http.services.portnomic-app.loadbalancer.server.port=80"
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.all-in-one
+      args:
+        APP_VERSION: ${APP_VERSION:-0.1.0}
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-shipflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-shipflow}?ssl=disable
+      DATABASE_URL_SYNC: postgresql://${POSTGRES_USER:-shipflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-shipflow}?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      ENVIRONMENT: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - shipflow-net
       - web
-
-  postgres:
-    networks:
-      - shipflow-net
-
-  redis:
-    networks:
-      - shipflow-net
+    labels:
+      - "traefik.enable=true"
+      # HTTPS (websecure :443)
+      - "traefik.http.routers.portnomic-app.rule=Host(`app.portnomic.com`)"
+      - "traefik.http.routers.portnomic-app.entrypoints=websecure"
+      - "traefik.http.routers.portnomic-app.tls=true"
+      - "traefik.http.routers.portnomic-app.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.portnomic-app.service=portnomic-app"
+      # HTTP → HTTPS redirect (web :80) - exclude ACME challenge for Let's Encrypt
+      - "traefik.http.routers.portnomic-app-http.rule=Host(`app.portnomic.com`) && !PathPrefix(`/.well-known/acme-challenge`)"
+      - "traefik.http.routers.portnomic-app-http.entrypoints=web"
+      - "traefik.http.routers.portnomic-app-http.middlewares=portnomic-app-redirect"
+      - "traefik.http.middlewares.portnomic-app-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.portnomic-app-redirect.redirectscheme.permanent=true"
+      # Service
+      - "traefik.http.services.portnomic-app.loadbalancer.server.port=80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:80/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    restart: unless-stopped
 
 networks:
   shipflow-net:
     driver: bridge
   web:
     external: true
+
+volumes:
+  pgdata:
+  redisdata:

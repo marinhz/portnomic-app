@@ -111,13 +111,13 @@ docker compose -f docker-compose.prod-simple.yml up -d
 
 ### Deploy on VPS with Traefik (app.portnomic.com)
 
-If Traefik is already running (e.g. for portnomic.com), use the Traefik overlay:
+If Traefik is already running (e.g. for portnomic.com), use the standalone Traefik compose (no port 80 conflict):
 
 ```bash
-docker compose -f docker-compose.prod-simple.yml -f docker-compose.traefik.yml up -d
+docker compose -f docker-compose.traefik.yml up -d
 ```
 
-See **[docs/deploy-vps-traefik.md](docs/deploy-vps-traefik.md)** for the full deployment guide (clone, `.env`, migrations, Traefik network, troubleshooting).
+See **[docs/deploy-vps-traefik.md](docs/deploy-vps-traefik.md)** for the full deployment guide (clone, `.env`, migrations, troubleshooting).
 
 ---
 
