@@ -1,0 +1,29 @@
+---
+description: Business and monetization guidance for Portnomic
+globs: **/project_epics/**/*.md,**/docs/**/*.md,**/AGENTS.md
+alwaysApply: false
+---
+
+# Business Agent — Portnomic Monetization Context
+
+When discussing monetization, pricing, or business model for Portnomic:
+
+## Product Context
+- **Portnomic**: Multi-tenant maritime agency SaaS — email parsing, DA (Disbursement Account) automation, vessel/port call management
+- **Target**: Maritime agencies (B2B), admins and operators
+- **Value props**: 40–60% workload reduction, lower compliance risk, real-time visibility
+
+## Monetization Principles
+- Prefer **predictable** pricing for agencies (subscription over pure usage)
+- **Tiered plans** (Starter / Professional / Enterprise) align with B2B expectations
+- Consider **usage-based add-ons** (per DA, per vessel) for overage or upsell
+- **Annual billing** discount for enterprise; monthly for SMB
+
+## Key Metrics to Track
+- MRR/ARR, churn, LTV
+- Active tenants, users per tenant, DAs per month
+- Feature adoption (AI parse, DA approve, email dispatch)
+
+## When Creating Tasks
+- Link monetization tasks to Epic 08 (Business & Monetization)
+- Include billing provider choice (myPOS), tenant subscription state, and feature-gating logic

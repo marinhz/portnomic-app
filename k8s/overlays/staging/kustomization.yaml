@@ -1,0 +1,81 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: shipflow-staging
+
+namePrefix: staging-
+
+resources:
+  - ../../base
+
+patches:
+  # Backend: 1 replica for staging
+  - target:
+      kind: Deployment
+      name: backend
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  # Worker: 1 replica for staging
+  - target:
+      kind: Deployment
+      name: worker
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  # Frontend: 1 replica for staging
+  - target:
+      kind: Deployment
+      name: frontend
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  # HPA: lower min replicas for staging
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: backend-hpa
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 3
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: worker-hpa
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 3
+  # Ingress: staging hostname
+  - target:
+      kind: Ingress
+      name: shipflow-ingress
+    patch: |
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: staging.shipflow.example.com
+      - op: replace
+        path: /spec/rules/0/host
+        value: staging.shipflow.example.com
+
+images:
+  - name: ghcr.io/shipflow/backend
+    newTag: staging
+  - name: ghcr.io/shipflow/frontend
+    newTag: staging
+
+configMapGenerator:
+  - name: shipflow-config
+    behavior: merge
+    literals:
+      - ENVIRONMENT=staging
+      - LOG_LEVEL=DEBUG
+      - CORS_ORIGINS=https://staging.shipflow.example.com

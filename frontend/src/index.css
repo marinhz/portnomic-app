@@ -1,0 +1,177 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* ==========================================================================
+   Portnomic Design System — Maritime + Modern Environmental Tech
+   Theme: Dark navy blue + electric mint green (aligned with public site)
+   ========================================================================== */
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  /* Brand tokens - Navy (from public-site.css) */
+  --color-navy-950: oklch(10% 0.02 250);
+  --color-navy-900: oklch(12% 0.025 250);
+  --color-navy-800: oklch(16% 0.025 250);
+  --color-navy-700: oklch(22% 0.02 250);
+  --color-navy-600: oklch(28% 0.02 250);
+  --color-navy-500: oklch(35% 0.02 250);
+  --color-navy-400: oklch(45% 0.02 250);
+  --color-navy-300: oklch(60% 0.02 250);
+  --color-navy-200: oklch(85% 0.02 250);
+  --color-navy-100: oklch(93% 0.02 250);
+  --color-navy-50: oklch(97% 0.01 250);
+
+  /* Brand tokens - Mint (from public-site.css) */
+  --color-mint-500: oklch(75% 0.18 165);
+  --color-mint-400: oklch(82% 0.15 165);
+  --color-mint-300: oklch(88% 0.1 165);
+  --color-mint-200: oklch(92% 0.06 165);
+  --color-mint-100: oklch(96% 0.03 165);
+  --color-mint-50: oklch(98% 0.015 165);
+
+  /* Alias: oxford-blue → navy (for backward compatibility) */
+  --color-oxford-blue-50: var(--color-navy-50);
+  --color-oxford-blue-100: var(--color-navy-100);
+  --color-oxford-blue-200: var(--color-navy-200);
+  --color-oxford-blue-300: var(--color-navy-300);
+  --color-oxford-blue-400: var(--color-navy-400);
+  --color-oxford-blue-500: var(--color-navy-500);
+  --color-oxford-blue-600: var(--color-navy-600);
+  --color-oxford-blue-700: var(--color-navy-700);
+  --color-oxford-blue-800: var(--color-navy-800);
+  --color-oxford-blue-900: var(--color-navy-900);
+  --color-oxford-blue-950: var(--color-navy-950);
+
+  /* Success Green - environmental (mint-aligned for consistency) */
+  --color-success-green-500: var(--color-mint-500);
+  --color-success-green-600: oklch(70% 0.16 165);
+  --color-success-green-700: oklch(60% 0.14 165);
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  * {
+    @apply border-border outline-ring/50;
+  }
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* Light theme - Portnomic: light backgrounds, navy text, mint primary */
+:root {
+  --radius: 0.625rem;
+  --background: var(--color-mint-50);
+  --foreground: var(--color-navy-950);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--color-navy-950);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--color-navy-950);
+  /* Primary = electric mint (matches public site) */
+  --primary: var(--color-mint-500);
+  --primary-foreground: var(--color-navy-950);
+  --success: var(--color-mint-500);
+  --secondary: var(--color-navy-100);
+  --secondary-foreground: var(--color-navy-950);
+  --muted: var(--color-navy-100);
+  --muted-foreground: var(--color-navy-600);
+  --accent: var(--color-mint-200);
+  --accent-foreground: var(--color-navy-950);
+  --destructive: oklch(53% 0.22 27);
+  --border: var(--color-navy-200);
+  --input: var(--color-navy-200);
+  --ring: var(--color-mint-500);
+  --chart-1: var(--color-mint-500);
+  --chart-2: var(--color-navy-600);
+  --chart-3: oklch(70% 0.16 165);
+  --chart-4: var(--color-navy-400);
+  --chart-5: oklch(65% 0.14 165);
+  --sidebar: var(--color-navy-50);
+  --sidebar-foreground: var(--color-navy-950);
+  --sidebar-primary: var(--color-mint-500);
+  --sidebar-primary-foreground: var(--color-navy-950);
+  --sidebar-accent: var(--color-mint-200);
+  --sidebar-accent-foreground: var(--color-navy-950);
+  --sidebar-border: var(--color-navy-200);
+  --sidebar-ring: var(--color-mint-500);
+}
+
+/* Dark theme - Portnomic: matches public-site.css exactly */
+.dark {
+  --background: var(--color-navy-950);
+  --foreground: oklch(96% 0.01 250);
+  --card: var(--color-navy-900);
+  --card-foreground: oklch(96% 0.01 250);
+  --popover: var(--color-navy-900);
+  --popover-foreground: oklch(96% 0.01 250);
+  --primary: var(--color-mint-500);
+  --primary-foreground: var(--color-navy-950);
+  --success: var(--color-mint-500);
+  --secondary: var(--color-navy-800);
+  --secondary-foreground: oklch(96% 0.01 250);
+  --muted: var(--color-navy-800);
+  --muted-foreground: oklch(65% 0.02 250);
+  --accent: var(--color-navy-700);
+  --accent-foreground: oklch(96% 0.01 250);
+  --destructive: oklch(53% 0.22 27);
+  --border: var(--color-navy-700);
+  --input: var(--color-navy-700);
+  --ring: var(--color-mint-500);
+  --chart-1: var(--color-mint-500);
+  --chart-2: var(--color-mint-400);
+  --chart-3: var(--color-navy-400);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: var(--color-navy-900);
+  --sidebar-foreground: oklch(96% 0.01 250);
+  --sidebar-primary: var(--color-mint-500);
+  --sidebar-primary-foreground: var(--color-navy-950);
+  --sidebar-accent: var(--color-navy-800);
+  --sidebar-accent-foreground: oklch(96% 0.01 250);
+  --sidebar-border: var(--color-navy-700);
+  --sidebar-ring: var(--color-mint-500);
+}

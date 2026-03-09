@@ -1,0 +1,68 @@
+# Daily PostgreSQL backup to S3.
+# Retention policy should be managed at the S3 bucket level via lifecycle rules.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: db-backup
+  namespace: shipflow
+  labels:
+    app.kubernetes.io/name: db-backup
+    app.kubernetes.io/component: backup
+    app.kubernetes.io/part-of: shipflow
+spec:
+  schedule: "0 2 * * *"
+  timeZone: "Etc/UTC"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 3600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: db-backup
+            app.kubernetes.io/component: backup
+            app.kubernetes.io/part-of: shipflow
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: pg-backup
+              image: postgres:16-alpine
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+                  FILENAME="shipflow-${TIMESTAMP}.sql.gz"
+                  echo "Starting backup: ${FILENAME}"
+                  pg_dump "${DATABASE_URL}" | gzip > "/tmp/${FILENAME}"
+                  apk add --no-cache aws-cli > /dev/null 2>&1
+                  aws s3 cp "/tmp/${FILENAME}" "s3://${S3_BACKUP_BUCKET}/postgres/${FILENAME}"
+                  echo "Backup uploaded to s3://${S3_BACKUP_BUCKET}/postgres/${FILENAME}"
+                  rm -f "/tmp/${FILENAME}"
+              envFrom:
+                - secretRef:
+                    name: shipflow-secrets
+              env:
+                - name: S3_BACKUP_BUCKET
+                  value: "shipflow-backups"
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: shipflow-secrets
+                      key: STORAGE_S3_ACCESS_KEY
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: shipflow-secrets
+                      key: STORAGE_S3_SECRET_KEY
+              resources:
+                requests:
+                  memory: "256Mi"
+                  cpu: "100m"
+                limits:
+                  memory: "512Mi"
+                  cpu: "250m"

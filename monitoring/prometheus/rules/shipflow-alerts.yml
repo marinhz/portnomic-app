@@ -1,0 +1,177 @@
+groups:
+  - name: availability
+    rules:
+      - alert: HighErrorRate
+        expr: >
+          (
+            rate(http_requests_total{status_code=~"5.."}[5m])
+            /
+            rate(http_requests_total[5m])
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High HTTP 5xx error rate on {{ $labels.endpoint }}"
+          description: >-
+            Error rate is {{ $value | humanizePercentage }} for
+            {{ $labels.method }} {{ $labels.endpoint }}
+            (tenant: {{ $labels.tenant_id }}).
+          runbook_url: "https://github.com/your-org/shipflow/wiki/runbooks/{{ $labels.alertname }}"
+
+      - alert: ServiceDown
+        expr: up{job="shipflow-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ShipFlow backend instance {{ $labels.instance }} is down"
+          description: >-
+            Prometheus has been unable to scrape {{ $labels.instance }}
+            for more than 1 minute.
+          runbook_url: "https://github.com/your-org/shipflow/wiki/runbooks/{{ $labels.alertname }}"
+
+      - alert: HealthCheckFailing
+        expr: probe_success == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Health check failing for {{ $labels.instance }}"
+          description: >-
+            The health check probe for {{ $labels.instance }} has been
+            failing for more than 2 minutes.
+          runbook_url: "https://github.com/your-org/shipflow/wiki/runbooks/{{ $labels.alertname }}"
+
+  - name: latency
+    rules:
+      - alert: HighP95Latency
+        expr: >
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket[5m])
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "P95 latency above 500ms on {{ $labels.endpoint }}"
+          description: >-
+            The 95th-percentile request latency for
+            {{ $labels.method }} {{ $labels.endpoint }}
+            is {{ $value | humanizeDuration }}
+            (tenant: {{ $labels.tenant_id }}).
+          runbook_url: "https://github.com/your-org/shipflow/wiki/runbooks/{{ $labels.alertname }}"
+
+      - alert: HighP99Latency
+        expr: >
+          histogram_quantile(0.99,
+            rate(http_request_duration_seconds_bucket[5m])
+          ) > 2
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "P99 latency above 2s on {{ $labels.endpoint }}"
+          description: >-
+            The 99th-percentile request latency for
+            {{ $labels.method }} {{ $labels.endpoint }}
+            is {{ $value | humanizeDuration }}
+            (tenant: {{ $labels.tenant_id }}).
+          runbook_url: "https://github.com/your-org/shipflow/wiki/runbooks/{{ $labels.alertname }}"
+
+      - alert: AIParseSlowness
+        expr: >
+          histogram_quantile(0.95,
+            rate(ai_parse_duration_seconds_bucket[5m])
+          ) > 30
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI parse P95 latency above 30s (tenant: {{ $labels.tenant_id }})"
+          description: >-
+            The 95th-percentile AI document parse latency is
+            {{ $value | humanizeDuration }} for tenant {{ $labels.tenant_id }}.
+          runbook_url: "https://github.com/your-org/shipflow/wiki/runbooks/{{ $labels.alertname }}"
+
+  - name: queue
+    rules:
+      - alert: QueueBacklog
+        expr: queue_depth{queue_name="shipflow:parse_jobs"} > 100
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Parse job queue backlog at {{ $value }} items"
+          description: >-
+            The {{ $labels.queue_name }} queue has {{ $value }} pending
+            jobs, exceeding the 100-item warning threshold for 10 minutes.
+          runbook_url: "https://github.com/your-org/shipflow/wiki/runbooks/{{ $labels.alertname }}"
+
+      - alert: QueueBacklogCritical
+        expr: queue_depth > 500
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical queue backlog: {{ $labels.queue_name }} at {{ $value }} items"
+          description: >-
+            The {{ $labels.queue_name }} queue has {{ $value }} pending jobs,
+            exceeding the 500-item critical threshold for 5 minutes.
+          runbook_url: "https://github.com/your-org/shipflow/wiki/runbooks/{{ $labels.alertname }}"
+
+  - name: dependencies
+    rules:
+      - alert: DatabaseDown
+        expr: absent(db_query_duration_seconds_count)
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "No database query metrics received"
+          description: >-
+            The db_query_duration_seconds metric has been absent for 5 minutes,
+            indicating the database may be unreachable.
+          runbook_url: "https://github.com/your-org/shipflow/wiki/runbooks/{{ $labels.alertname }}"
+
+      - alert: HighDBLatency
+        expr: >
+          histogram_quantile(0.95,
+            rate(db_query_duration_seconds_bucket[5m])
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database P95 latency above 1s ({{ $labels.operation }})"
+          description: >-
+            The 95th-percentile database query latency for
+            {{ $labels.operation }} operations is {{ $value | humanizeDuration }}.
+          runbook_url: "https://github.com/your-org/shipflow/wiki/runbooks/{{ $labels.alertname }}"
+
+  - name: auth
+    rules:
+      - alert: HighLoginFailureRate
+        expr: rate(auth_login_failures_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High login failure rate ({{ $value | humanize }}/s)"
+          description: >-
+            Login failures are occurring at {{ $value | humanize }}/s
+            for tenant {{ $labels.tenant_id }}.
+            Reason: {{ $labels.reason }}.
+          runbook_url: "https://github.com/your-org/shipflow/wiki/runbooks/{{ $labels.alertname }}"
+
+      - alert: PermissionDeniedSpike
+        expr: rate(permission_denied_total[5m]) > 20
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Permission-denied spike ({{ $value | humanize }}/s)"
+          description: >-
+            Permission-denied responses are spiking at {{ $value | humanize }}/s
+            on {{ $labels.endpoint }} for tenant {{ $labels.tenant_id }}.
+          runbook_url: "https://github.com/your-org/shipflow/wiki/runbooks/{{ $labels.alertname }}"

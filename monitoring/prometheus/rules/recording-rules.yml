@@ -1,0 +1,39 @@
+groups:
+  - name: shipflow_recording_rules
+    interval: 15s
+    rules:
+      - record: shipflow:http_requests:rate5m
+        expr: sum(rate(http_requests_total[5m])) by (method, endpoint, tenant_id)
+
+      - record: shipflow:http_errors:rate5m
+        expr: sum(rate(http_requests_total{status_code=~"5.."}[5m])) by (method, endpoint, tenant_id)
+
+      - record: shipflow:http_error_ratio:rate5m
+        expr: >
+          shipflow:http_errors:rate5m
+          /
+          clamp_min(shipflow:http_requests:rate5m, 1)
+
+      - record: shipflow:http_latency_p50:5m
+        expr: >
+          histogram_quantile(0.50,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, method, endpoint, tenant_id)
+          )
+
+      - record: shipflow:http_latency_p95:5m
+        expr: >
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, method, endpoint, tenant_id)
+          )
+
+      - record: shipflow:http_latency_p99:5m
+        expr: >
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, method, endpoint, tenant_id)
+          )
+
+      - record: shipflow:ai_parse_success_rate:rate5m
+        expr: >
+          sum(rate(ai_parse_total{status="success"}[5m])) by (tenant_id)
+          /
+          clamp_min(sum(rate(ai_parse_total[5m])) by (tenant_id), 1)

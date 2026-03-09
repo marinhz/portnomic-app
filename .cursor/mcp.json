@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "shadcn": {
+      "command": "npx",
+      "args": [
+        "shadcn@latest",
+        "mcp"
+      ],
+      "cwd": "frontend",
+      "env": {
+        "REGISTRY_TOKEN": "test-token-for-private-registry",
+        "API_KEY": "test-api-key"
+      }
+    }
+  }
+}

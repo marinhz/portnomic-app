@@ -1,0 +1,48 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: shipflow
+          __path__: /var/log/containers/*.log
+
+    pipeline_stages:
+      - docker: {}
+
+      - json:
+          expressions:
+            level: level
+            logger: logger
+            message: message
+            tenant_id: tenant_id
+            user_id: user_id
+            request_id: request_id
+            correlation_id: correlation_id
+            log_timestamp: timestamp
+
+      - labels:
+          level:
+          logger:
+          tenant_id:
+          request_id:
+          correlation_id:
+
+      - timestamp:
+          source: log_timestamp
+          format: "2006-01-02T15:04:05.000Z07:00"
+          fallback_formats:
+            - "2006-01-02T15:04:05Z07:00"
+
+      - output:
+          source: message

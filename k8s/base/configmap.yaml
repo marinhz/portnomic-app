@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shipflow-config
+  namespace: shipflow
+  labels:
+    app.kubernetes.io/part-of: shipflow
+data:
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+  CORS_ORIGINS: "https://shipflow.example.com"
+  RATE_LIMIT_PER_MINUTE: "100"
+  RATE_LIMIT_AUTH_PER_MINUTE: "20"
+  LLM_MODEL: "gpt-4o-mini"
+  LLM_TIMEOUT_SECONDS: "60"
+  LLM_MAX_RETRIES: "3"
+  STORAGE_BACKEND: "s3"

@@ -1,0 +1,22 @@
+---
+description: UI test patterns for React, Vitest, Playwright
+globs: **/*.test.{ts,tsx},**/*.spec.{ts,tsx},**/__tests__/**/*.{ts,tsx},**/e2e/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# UI Test Conventions
+
+When writing or editing UI tests, follow these patterns:
+
+## Query Priority
+- Prefer `getByRole`, `getByLabelText` over `getByText` or `getByTestId`
+- Use `findBy*` for async elements; `waitFor` for custom assertions
+
+## Router
+- Wrap route-dependent components in `createMemoryRouter` + `RouterProvider` or `MemoryRouter`
+
+## API Mocking
+- Use MSW handlers in `mocks/handlers.ts`; start server in `setup.ts`
+
+## shadcn
+- Test accessible behavior (roles, labels); avoid asserting internal DOM structure

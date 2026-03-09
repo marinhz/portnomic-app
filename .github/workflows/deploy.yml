@@ -1,0 +1,82 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      image_tag:
+        description: "Image tag to deploy (defaults to latest main SHA)"
+        required: false
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve image tag
+        id: tag
+        run: |
+          if [ -n "${{ inputs.image_tag }}" ]; then
+            echo "tag=${{ inputs.image_tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure kubectl
+        uses: azure/setup-kubectl@v4
+
+      # Uncomment and configure for your cluster:
+      # - name: Set kubeconfig
+      #   run: |
+      #     echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+
+      - name: Deploy manifests
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          ENV="${{ inputs.environment }}"
+          echo "::notice::Deploying tag ${TAG} to ${ENV}"
+          echo ""
+          echo "Images:"
+          echo "  Backend:  ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:${TAG}"
+          echo "  Frontend: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:${TAG}"
+          echo ""
+          # Uncomment the deployment strategy for your setup:
+          #
+          # --- Option A: kubectl ---
+          # kubectl -n shipflow-${ENV} set image deployment/backend \
+          #   backend=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:${TAG}
+          # kubectl -n shipflow-${ENV} set image deployment/frontend \
+          #   frontend=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:${TAG}
+          # kubectl -n shipflow-${ENV} set image deployment/worker \
+          #   worker=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/backend:${TAG}
+          #
+          # --- Option B: ArgoCD ---
+          # argocd app set shipflow-${ENV} \
+          #   --parameter backend.image.tag=${TAG} \
+          #   --parameter frontend.image.tag=${TAG}
+          # argocd app sync shipflow-${ENV}
+
+      - name: Verify rollout
+        run: |
+          ENV="${{ inputs.environment }}"
+          echo "::notice::Verifying rollout for ${ENV}"
+          # Uncomment for your setup:
+          # kubectl -n shipflow-${ENV} rollout status deployment/backend --timeout=120s
+          # kubectl -n shipflow-${ENV} rollout status deployment/frontend --timeout=120s
+          # kubectl -n shipflow-${ENV} rollout status deployment/worker --timeout=120s
+          echo "Deployment verification placeholder complete."

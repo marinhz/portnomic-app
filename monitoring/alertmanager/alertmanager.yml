@@ -1,0 +1,71 @@
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: "smtp.example.com:587"
+  smtp_from: "alerts@shipflow.ai"
+  smtp_auth_username: "alerts@shipflow.ai"
+  smtp_auth_password: "${SMTP_PASSWORD}"
+  smtp_require_tls: true
+
+route:
+  receiver: slack-warnings
+  group_by:
+    - alertname
+    - severity
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+  routes:
+    - receiver: pagerduty-critical
+      match:
+        severity: critical
+      continue: true
+
+    - receiver: email-fallback
+      match:
+        severity: critical
+
+    - receiver: slack-warnings
+      match:
+        severity: warning
+
+receivers:
+  - name: slack-warnings
+    slack_configs:
+      - api_url: "${SLACK_WEBHOOK_URL}"
+        channel: "#shipflow-alerts"
+        title: '{{ .GroupLabels.alertname }} [{{ .Status | toUpper }}]'
+        text: >-
+          {{ range .Alerts }}
+          *{{ .Annotations.summary }}*
+          {{ .Annotations.description }}
+          {{ end }}
+        send_resolved: true
+
+  - name: pagerduty-critical
+    pagerduty_configs:
+      - service_key: "${PAGERDUTY_SERVICE_KEY}"
+        description: '{{ .GroupLabels.alertname }}: {{ .CommonAnnotations.summary }}'
+        severity: critical
+
+  - name: email-fallback
+    email_configs:
+      - to: "ops@shipflow.ai"
+        headers:
+          Subject: '[ShipFlow CRITICAL] {{ .GroupLabels.alertname }}'
+        html: |
+          <h2>{{ .GroupLabels.alertname }}</h2>
+          {{ range .Alerts }}
+          <p><strong>{{ .Annotations.summary }}</strong></p>
+          <p>{{ .Annotations.description }}</p>
+          <hr/>
+          {{ end }}
+        send_resolved: true
+
+inhibit_rules:
+  - source_matchers:
+      - severity = critical
+    target_matchers:
+      - severity = warning
+    equal:
+      - alertname

@@ -1,0 +1,92 @@
+# ==============================================================================
+# ShipFlow AI - All-in-one container (API + ARQ worker + frontend)
+# ==============================================================================
+# Multi-stage build: frontend → backend → runtime with supervisord + nginx
+# Use for dev, staging, demo, or single-VM deployments.
+# ==============================================================================
+
+ARG APP_VERSION=0.1.0
+
+# ---------- Stage 1: Frontend build ----------
+FROM node:20-alpine AS frontend-builder
+
+ARG APP_VERSION
+ENV APP_VERSION=${APP_VERSION}
+
+WORKDIR /build
+
+COPY frontend/package.json frontend/package-lock.json* ./
+RUN npm ci
+
+COPY frontend/ .
+RUN npm run build
+
+# ---------- Stage 2: Backend build ----------
+FROM python:3.11-slim AS backend-builder
+
+ARG APP_VERSION
+ENV APP_VERSION=${APP_VERSION}
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc libpq-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+COPY backend/pyproject.toml ./
+COPY backend/app/ ./app/
+
+RUN pip install --no-cache-dir --prefix=/install .
+
+# ---------- Stage 3: Runtime ----------
+FROM python:3.11-slim
+
+ARG APP_VERSION
+ENV APP_VERSION=${APP_VERSION} \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        libpq5 \
+        curl \
+        nginx \
+        supervisor \
+        libpango-1.0-0 \
+        libpangocairo-1.0-0 \
+        libpangoft2-1.0-0 \
+        libharfbuzz0b \
+        libharfbuzz-subset0 \
+        libgdk-pixbuf-2.0-0 \
+        libffi8 \
+        shared-mime-info \
+        && rm -rf /var/lib/apt/lists/* && \
+    groupadd --gid 1000 appuser && \
+    useradd --uid 1000 --gid appuser --shell /bin/sh --create-home appuser && \
+    mkdir -p /var/log/nginx /var/cache/nginx /var/run && \
+    chown -R appuser:appuser /var/log/nginx /var/cache/nginx
+
+# Backend
+COPY --from=backend-builder /install /usr/local
+WORKDIR /app
+COPY --chown=appuser:appuser backend/app/ ./app/
+COPY --chown=appuser:appuser backend/alembic/ ./alembic/
+COPY --chown=appuser:appuser backend/alembic.ini ./
+
+# Frontend static
+COPY --from=frontend-builder /build/dist /usr/share/nginx/html
+
+# Nginx + Supervisor config
+COPY docker/nginx-all-in-one.conf /etc/nginx/nginx.conf
+COPY docker/supervisord.conf /etc/supervisor/supervisord.conf
+
+# Fix nginx config ownership (nginx may run as root in container)
+RUN chown -R appuser:appuser /usr/share/nginx/html
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD curl -f http://127.0.0.1:80/health || exit 1
+
+# Run as root: supervisord needs root to manage uvicorn, arq, nginx
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
