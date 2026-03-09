@@ -109,6 +109,16 @@ docker compose -f docker-compose.prod-simple.yml up -d
 
 **Required env vars** (same as multi-service): `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, `MFA_ENCRYPTION_KEY`. For OAuth: `OAUTH_REDIRECT_BASE_URL`, `OAUTH_FRONTEND_SUCCESS_URL` (e.g. `http://your-domain/api`, `http://your-domain/settings/integrations`).
 
+### Deploy on VPS with Traefik (app.portnomic.com)
+
+If Traefik is already running (e.g. for portnomic.com), use the Traefik overlay:
+
+```bash
+docker compose -f docker-compose.prod-simple.yml -f docker-compose.traefik.yml up -d
+```
+
+See **[docs/deploy-vps-traefik.md](docs/deploy-vps-traefik.md)** for the full deployment guide (clone, `.env`, migrations, Traefik network, troubleshooting).
+
 ---
 
 ## Project Structure

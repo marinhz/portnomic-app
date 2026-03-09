@@ -1,0 +1,44 @@
+# ==============================================================================
+# Portnomic App - Traefik deployment (app.portnomic.com)
+# ==============================================================================
+# Usage on VPS:
+#   docker compose -f docker-compose.prod-simple.yml -f docker-compose.traefik.yml up -d
+#
+# Prerequisites:
+#   - Traefik running on the same host (or Docker network)
+#   - Set TRAEFIK_NETWORK to match your Traefik network (e.g. web, traefik, proxy)
+#   - DNS: app.portnomic.com → your VPS IP
+# ==============================================================================
+
+services:
+  app:
+    ports: []  # Traefik routes via internal network; no host port needed
+    labels:
+      # Traefik v2/v3 router
+      - "traefik.enable=true"
+      - "traefik.http.routers.portnomic-app.rule=Host(`app.portnomic.com`)"
+      - "traefik.http.routers.portnomic-app.entrypoints=websecure"
+      - "traefik.http.routers.portnomic-app.tls=true"
+      # Use default cert resolver (Let's Encrypt) if configured
+      - "traefik.http.routers.portnomic-app.tls.certresolver=letsencrypt"
+      # Service
+      - "traefik.http.services.portnomic-app.loadbalancer.server.port=80"
+    networks:
+      - shipflow-net
+      - traefik
+    # Remove port mapping - Traefik routes via internal network
+    # (ports: 80 removed - handled by Traefik)
+
+  postgres:
+    networks:
+      - shipflow-net
+
+  redis:
+    networks:
+      - shipflow-net
+
+networks:
+  shipflow-net:
+    driver: bridge
+  traefik:
+    external: true
