@@ -62,6 +62,8 @@ services:
       - web
     labels:
       - "traefik.enable=true"
+      # Use web network so Traefik (from main site) can reach this container
+      - "traefik.docker.network=web"
       # HTTPS (websecure :443)
       - "traefik.http.routers.portnomic-app.rule=Host(`app.portnomic.com`)"
       - "traefik.http.routers.portnomic-app.entrypoints=websecure"

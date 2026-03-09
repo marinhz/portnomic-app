@@ -152,7 +152,26 @@ docker compose -f docker-compose.traefik.yml exec app alembic upgrade head
 | Issue | Check |
 |-------|-------|
 | 502 Bad Gateway | App container running? `docker ps -a` |
+| 504 Gateway Timeout | Traefik can't reach app. Add `traefik.docker.network=web` label. Run diagnostics below. |
 | 404 from Traefik | Host rule matches? Network correct? |
 | CORS errors | `CORS_ORIGINS` includes `https://app.portnomic.com` |
 | DB connection failed | `DATABASE_URL` uses `postgres` host, not `localhost` |
 | OAuth redirect fails | `OAUTH_REDIRECT_BASE_URL` and `OAUTH_FRONTEND_SUCCESS_URL` correct |
+
+### 504 Gateway Timeout – diagnostics
+
+```bash
+# 1. Is the app container running?
+docker ps -a | grep portnomic-app
+
+# 2. Can the app respond from inside its own container?
+docker compose -f docker-compose.traefik.yml exec app curl -s http://localhost:80/health
+
+# 3. App logs (look for DB/Redis connection errors)
+docker compose -f docker-compose.traefik.yml logs app --tail 50
+
+# 4. Is the app on the web network? (Traefik must use this network)
+docker network inspect web | grep -A2 portnomic-app
+```
+
+Ensure the compose has `traefik.docker.network=web` so Traefik uses the correct network.
