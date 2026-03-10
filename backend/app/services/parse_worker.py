@@ -20,7 +20,9 @@ from app.services.carbon_price import get_current_price_eur
 from app.services.emission_anomaly import detect_and_apply_anomalies
 from app.services.emission_calculator import calculate_emissions, estimate_eua
 from app.services.emission_parser import EMISSION_PROMPT_VERSION, parse_emission_content
+from app.services.disbursement_account import generate_da
 from app.services.llm_client import LlmConfigError, is_transient_error, parse_email_content
+from app.services.limits import check_da_limit
 from app.services.prompts import get_prompt
 from app.services.report_type_detector import is_emission_report
 
@@ -58,7 +60,7 @@ async def _resolve_vessel(
 async def _resolve_port(
     db: AsyncSession, tenant_id: uuid.UUID, result: ParsedEmailResult
 ) -> uuid.UUID | None:
-    """Find a port from parsed data."""
+    """Find or create a port from parsed data."""
     if result.port_code:
         stmt = select(Port).where(
             ((Port.tenant_id == tenant_id) | (Port.tenant_id.is_(None))),
@@ -76,6 +78,15 @@ async def _resolve_port(
         port = (await db.execute(stmt)).scalar_one_or_none()
         if port:
             return port.id
+
+    # Port not found: create it so port call and DA can be created (e.g. Rotterdam for non-demo tenants).
+    if result.port_code or result.port_name:
+        name = result.port_name or result.port_code or "Unknown"
+        code = result.port_code or (name[:20].upper().replace(" ", "") if name else "XX")
+        port = Port(tenant_id=tenant_id, name=name, code=code)
+        db.add(port)
+        await db.flush()
+        return port.id
 
     return None
 
@@ -375,4 +386,50 @@ async def process_email(
     job.completed_at = datetime.now(timezone.utc)
 
     await db.flush()
+
+    # Auto-create DA when we have a port call and parsed line items (disbursement email).
+    if port_call_id and result.line_items:
+        da_type = "final" if (email.subject or "").lower().find("final") >= 0 else "proforma"
+        da_limit = await check_da_limit(db, email.tenant_id)
+        if da_limit.allowed:
+            try:
+                parsed_items = [
+                    {
+                        "description": li.description,
+                        "amount": li.amount,
+                        "currency": li.currency or "USD",
+                        "quantity": li.quantity or 1.0,
+                        "unit_price": li.unit_price if li.unit_price is not None else li.amount,
+                    }
+                    for li in result.line_items
+                ]
+                da = await generate_da(
+                    db,
+                    email.tenant_id,
+                    port_call_id,
+                    da_type,
+                    parsed_line_items=parsed_items,
+                )
+                logger.info(
+                    "Auto-created DA %s from parsed email %s (type=%s)",
+                    da.id,
+                    email_id,
+                    da_type,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Failed to auto-create DA from email %s: %s",
+                    email_id,
+                    exc,
+                    exc_info=True,
+                )
+        else:
+            logger.info(
+                "DA limit exceeded for tenant %s (%d/%s), skipping auto-create from email %s",
+                email.tenant_id,
+                da_limit.current,
+                da_limit.limit,
+                email_id,
+            )
+
     logger.info("Email %s parsed successfully, job %s completed", email_id, job_id)

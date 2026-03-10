@@ -367,22 +367,19 @@ async def _poll_tenant_imap(
         # Full sync: fetch ALL emails (including read). Normal sync: only UNSEEN (unread).
         search_criterion = "ALL" if full else "UNSEEN"
 
-        # Try UID SEARCH first (stable IDs); fall back to SEARCH on cPanel/Dovecot "Unknown argument" errors.
+        # Try UID SEARCH first (stable IDs); fall back to SEARCH on any UID error (cPanel/Dovecot compatibility).
         use_uid = True
         try:
             _, data = mail.uid("SEARCH", None, search_criterion)
             ids = data[0].split() if data[0] else []
         except imaplib.IMAP4.error as e:
-            if "unknown" in str(e).lower() or "argument" in str(e).lower():
-                logger.info(
-                    "IMAP UID SEARCH not supported (e.g. cPanel/Dovecot), falling back to SEARCH: %s",
-                    e,
-                )
-                use_uid = False
-                _, data = mail.search(None, search_criterion)
-                ids = data[0].split() if data[0] else []
-            else:
-                raise
+            logger.info(
+                "IMAP UID SEARCH failed, falling back to SEARCH: %s",
+                e,
+            )
+            use_uid = False
+            _, data = mail.search(None, search_criterion)
+            ids = data[0].split() if data[0] else []
 
         ingested = 0
         skipped_non_vessel = 0
