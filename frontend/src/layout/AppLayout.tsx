@@ -1,9 +1,17 @@
 import { useState, useEffect } from "react";
-import { Outlet, useNavigate } from "react-router";
-import { Menu, Sun, Moon } from "lucide-react";
+import { Outlet, Link, useNavigate } from "react-router";
+import { Menu, Sun, Moon, ChevronDown, User, Users, Shield, Building2, LogOut } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Sidebar } from "./Sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const SIDEBAR_COLLAPSED_KEY = "sidebar-collapsed";
 
@@ -18,6 +26,11 @@ export function AppLayout() {
   const { theme, toggle: toggleTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(getInitialCollapsed);
+
+  const hasAdminUsers = user?.permissions.includes("admin:users") ?? false;
+  const hasAdminRoles = user?.permissions.includes("admin:roles") ?? false;
+  const isPlatformAdmin = user?.is_platform_admin ?? false;
+  const showAdmin = hasAdminUsers || hasAdminRoles || isPlatformAdmin;
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(sidebarCollapsed));
@@ -74,19 +87,66 @@ export function AppLayout() {
               )}
             </button>
 
-            <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-mint-100 text-xs font-semibold text-navy-800 dark:bg-navy-800 dark:text-mint-200">
-                {user?.email?.charAt(0).toUpperCase()}
-              </div>
-              <span className="hidden sm:inline">{user?.email}</span>
-            </div>
-
-            <button
-              onClick={handleLogout}
-              className="rounded-lg px-3 py-1.5 text-sm text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
-            >
-              Logout
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-3 rounded-lg px-2 py-1.5 text-sm text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-navy-950"
+                  aria-label="User menu"
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-mint-100 text-xs font-semibold text-navy-800 dark:bg-navy-800 dark:text-mint-200">
+                    {user?.email?.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="hidden sm:inline">{user?.email}</span>
+                  <ChevronDown className="size-4 shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>{user?.email}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/settings/profile" className="flex items-center gap-2">
+                    <User className="size-4" />
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
+                {showAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Admin</DropdownMenuLabel>
+                    {hasAdminUsers && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin/users" className="flex items-center gap-2">
+                          <Users className="size-4" />
+                          Users
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    {hasAdminRoles && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin/roles" className="flex items-center gap-2">
+                          <Shield className="size-4" />
+                          Roles
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    {isPlatformAdmin && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin/companies" className="flex items-center gap-2">
+                          <Building2 className="size-4" />
+                          Companies
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                  </>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2">
+                  <LogOut className="size-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 

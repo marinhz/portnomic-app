@@ -3,12 +3,9 @@ import {
   LayoutDashboard,
   Ship,
   Anchor,
-  Users,
   Mail,
   FileText,
   Settings,
-  Shield,
-  Building2,
   X,
   CreditCard,
   Leaf,
@@ -106,16 +103,13 @@ export function Sidebar({
   const { user } = useAuth();
 
   const hasDARead = user?.permissions.includes("da:read") ?? false;
-  const hasAdminUsers = user?.permissions.includes("admin:users") ?? false;
-  const hasAdminRoles = user?.permissions.includes("admin:roles") ?? false;
   const hasBillingManage =
     user?.permissions.includes("billing:manage") ?? false;
   const hasSettingsWrite =
     user?.permissions.includes("settings:write") ?? false;
   const isPlatformAdmin = user?.is_platform_admin ?? false;
-  const showAdmin = hasAdminUsers || hasAdminRoles || isPlatformAdmin;
   const showOtherSettings =
-    hasAdminUsers || hasBillingManage || hasSettingsWrite || isPlatformAdmin;
+    hasBillingManage || hasSettingsWrite || isPlatformAdmin;
 
   return (
     <div className="flex h-full flex-col bg-white dark:bg-slate-900">
@@ -226,35 +220,6 @@ export function Sidebar({
           )}
         </>
 
-        {showAdmin && (
-          <>
-            <SectionDivider label="Admin" isCollapsed={isCollapsed} />
-            {hasAdminUsers && (
-              <NavItem
-                to="/admin/users"
-                icon={Users}
-                label="Users"
-                isCollapsed={isCollapsed}
-              />
-            )}
-            {hasAdminRoles && (
-              <NavItem
-                to="/admin/roles"
-                icon={Shield}
-                label="Roles"
-                isCollapsed={isCollapsed}
-              />
-            )}
-            {isPlatformAdmin && (
-              <NavItem
-                to="/admin/companies"
-                icon={Building2}
-                label="Companies"
-                isCollapsed={isCollapsed}
-              />
-            )}
-          </>
-        )}
       </nav>
 
       {/* Collapse toggle */}
@@ -288,35 +253,6 @@ export function Sidebar({
         </div>
       )}
 
-      {/* User */}
-      <div
-        className={`flex shrink-0 items-center gap-3 border-t border-slate-200 px-4 py-3 dark:border-slate-700`}
-      >
-        {isCollapsed ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex h-8 w-8 shrink-0 cursor-default items-center justify-center rounded-full bg-mint-100 text-xs font-semibold text-navy-800 dark:bg-navy-800 dark:text-mint-200">
-                {user?.email?.charAt(0).toUpperCase() ?? "?"}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={8}>
-              {user?.email ?? "User"}
-            </TooltipContent>
-          </Tooltip>
-        ) : (
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-mint-100 text-xs font-semibold text-navy-800 dark:bg-navy-800 dark:text-mint-200">
-              {user?.email?.charAt(0).toUpperCase() ?? "?"}
-            </div>
-            <p
-              className="min-w-0 flex-1 truncate text-sm text-slate-600 dark:text-slate-300"
-              title={user?.email ?? undefined}
-            >
-              {user?.email}
-            </p>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
