@@ -13,5 +13,6 @@
 | 6.9 | [Investigate Gmail sync bug (new emails not syncing)](task-09-investigate-gmail-sync-bug.md) |
 | 6.10 | [Vessel-only email sync with auto-parse once and manual retry](task-10-vessel-only-sync-auto-parse-once.md) |
 | 6.11 | [Admin delete email from UI](task-11-admin-delete-email-ui.md) |
+| 6.12 | [Custom SMTP: better error handling, test connection, hide Outlook](task-12-custom-smtp-error-handling-test-connection-hide-outlook.md) |
 
 [← Back to Epic 6](../epic.md)

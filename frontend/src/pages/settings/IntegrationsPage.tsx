@@ -10,7 +10,12 @@ import {
   XCircle,
   AlertCircle,
   MinusCircle,
+  Cable,
 } from "lucide-react";
+
+const SHOW_OUTLOOK_CONNECT =
+  (import.meta as { env?: { VITE_SHOW_OUTLOOK_CONNECT?: string } }).env
+    ?.VITE_SHOW_OUTLOOK_CONNECT === "true";
 import { toast } from "sonner";
 import api, { ApiError } from "@/api/client";
 import type {
@@ -71,6 +76,8 @@ export function IntegrationsPage() {
     imap_password: "",
   });
   const [imapSubmitting, setImapSubmitting] = useState(false);
+  const [imapFormError, setImapFormError] = useState<string | null>(null);
+  const [imapTesting, setImapTesting] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
   const fetchConnections = useCallback(async () => {
@@ -164,8 +171,32 @@ export function IntegrationsPage() {
     }
   }
 
+  async function handleTestConnection(e: React.MouseEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    setImapFormError(null);
+    setImapTesting(true);
+    try {
+      const res = await api.post<{ ok: boolean; error?: string }>(
+        "/integrations/email/imap/test",
+        imapForm,
+      );
+      if (res.data.ok) {
+        toast.success("Connection successful.");
+      } else {
+        setImapFormError(res.data.error ?? "Connection failed.");
+      }
+    } catch (err) {
+      setImapFormError(
+        err instanceof ApiError ? err.message : "Test connection failed.",
+      );
+    } finally {
+      setImapTesting(false);
+    }
+  }
+
   async function handleImapSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setImapFormError(null);
     setImapSubmitting(true);
     try {
       await api.post<SingleResponse<MailConnectionResponse>>(
@@ -182,9 +213,10 @@ export function IntegrationsPage() {
       toast.success("IMAP connection added.");
       fetchConnections();
     } catch (err) {
-      toast.error(
-        err instanceof ApiError ? err.message : "Failed to add IMAP connection",
-      );
+      const message =
+        err instanceof ApiError ? err.message : "Failed to add IMAP connection";
+      setImapFormError(message);
+      // Form values preserved; user can correct and retry (Task 6.12: error in Alert, not just toast)
     } finally {
       setImapSubmitting(false);
     }
@@ -236,10 +268,12 @@ export function IntegrationsPage() {
           <Mail className="size-4" />
           Connect Gmail
         </Button>
-        <Button variant="outline" onClick={() => handleConnect("outlook")}>
-          <Inbox className="size-4" />
-          Connect Outlook
-        </Button>
+        {SHOW_OUTLOOK_CONNECT && (
+          <Button variant="outline" onClick={() => handleConnect("outlook")}>
+            <Inbox className="size-4" />
+            Connect Outlook
+          </Button>
+        )}
         <Button
           variant="outline"
           onClick={() => setShowImapForm((v) => !v)}
@@ -256,6 +290,11 @@ export function IntegrationsPage() {
             <CardTitle>Add IMAP Connection</CardTitle>
           </CardHeader>
           <CardContent>
+            {imapFormError && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{imapFormError}</AlertDescription>
+              </Alert>
+            )}
             <form onSubmit={handleImapSubmit} className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="imap_host">IMAP Host</Label>
@@ -264,9 +303,10 @@ export function IntegrationsPage() {
                   type="text"
                   required
                   value={imapForm.imap_host}
-                  onChange={(e) =>
-                    setImapForm((p) => ({ ...p, imap_host: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setImapForm((p) => ({ ...p, imap_host: e.target.value }));
+                    setImapFormError(null);
+                  }}
                   placeholder="imap.example.com"
                 />
               </div>
@@ -277,12 +317,13 @@ export function IntegrationsPage() {
                   type="number"
                   required
                   value={imapForm.imap_port}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setImapForm((p) => ({
                       ...p,
                       imap_port: Number(e.target.value),
-                    }))
-                  }
+                    }));
+                    setImapFormError(null);
+                  }}
                 />
               </div>
               <div className="space-y-2">
@@ -292,9 +333,10 @@ export function IntegrationsPage() {
                   type="text"
                   required
                   value={imapForm.imap_user}
-                  onChange={(e) =>
-                    setImapForm((p) => ({ ...p, imap_user: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setImapForm((p) => ({ ...p, imap_user: e.target.value }));
+                    setImapFormError(null);
+                  }}
                   placeholder="user@example.com"
                 />
               </div>
@@ -305,15 +347,25 @@ export function IntegrationsPage() {
                   type="password"
                   required
                   value={imapForm.imap_password}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setImapForm((p) => ({
                       ...p,
                       imap_password: e.target.value,
-                    }))
-                  }
+                    }));
+                    setImapFormError(null);
+                  }}
                 />
               </div>
-              <div className="flex justify-end sm:col-span-2">
+              <div className="flex flex-wrap gap-2 justify-end sm:col-span-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleTestConnection}
+                  disabled={imapTesting || imapSubmitting}
+                >
+                  <Cable className="size-4" />
+                  {imapTesting ? "Testing..." : "Test connection"}
+                </Button>
                 <Button type="submit" disabled={imapSubmitting}>
                   {imapSubmitting ? "Adding..." : "Add IMAP Connection"}
                 </Button>

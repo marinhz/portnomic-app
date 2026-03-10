@@ -68,16 +68,19 @@ async def poll_all_tenant_connections(db: AsyncSession) -> int:
     return total
 
 
-async def poll_tenant_connections(db: AsyncSession, tenant_id: uuid.UUID) -> int:
+async def poll_tenant_connections(
+    db: AsyncSession, tenant_id: uuid.UUID, *, full: bool = False
+) -> int:
     """Fetch new emails from this tenant's connected mailboxes. Returns total ingested."""
     if tenant_id == DEMO_TENANT_ID:
         return 0
     connections = await get_connected_for_tenant(db, tenant_id)
     logger.info(
-        "Sync: tenant=%s has %d connected mailbox(es): %s",
+        "Sync: tenant=%s has %d connected mailbox(es): %s (full=%s)",
         tenant_id,
         len(connections),
         [f"{c.provider}:{c.display_email}" for c in connections],
+        full,
     )
     total = 0
     for conn in connections:
@@ -87,7 +90,7 @@ async def poll_tenant_connections(db: AsyncSession, tenant_id: uuid.UUID) -> int
             elif conn.provider == "outlook":
                 count = await _poll_outlook(db, conn)
             elif conn.provider == "imap":
-                count = await _poll_tenant_imap(db, conn)
+                count = await _poll_tenant_imap(db, conn, full=full)
             else:
                 continue
             total += count
@@ -346,7 +349,9 @@ async def _poll_outlook(db: AsyncSession, conn: MailConnection) -> int:
     return ingested
 
 
-async def _poll_tenant_imap(db: AsyncSession, conn: MailConnection) -> int:
+async def _poll_tenant_imap(
+    db: AsyncSession, conn: MailConnection, *, full: bool = False
+) -> int:
     creds = decrypt_credentials(conn.encrypted_credentials)
     password = creds.get("password", "")
     if not conn.imap_host or not conn.imap_user or not password:
@@ -359,8 +364,26 @@ async def _poll_tenant_imap(db: AsyncSession, conn: MailConnection) -> int:
         mail.login(conn.imap_user, password)
         mail.select("INBOX")
 
-        _, data = mail.search(None, "UNSEEN")
-        message_ids = data[0].split() if data[0] else []
+        # Full sync: fetch ALL emails (including read). Normal sync: only UNSEEN (unread).
+        search_criterion = "ALL" if full else "UNSEEN"
+
+        # Try UID SEARCH first (stable IDs); fall back to SEARCH on cPanel/Dovecot "Unknown argument" errors.
+        use_uid = True
+        try:
+            _, data = mail.uid("SEARCH", None, search_criterion)
+            ids = data[0].split() if data[0] else []
+        except imaplib.IMAP4.error as e:
+            if "unknown" in str(e).lower() or "argument" in str(e).lower():
+                logger.info(
+                    "IMAP UID SEARCH not supported (e.g. cPanel/Dovecot), falling back to SEARCH: %s",
+                    e,
+                )
+                use_uid = False
+                _, data = mail.search(None, search_criterion)
+                ids = data[0].split() if data[0] else []
+            else:
+                raise
+
         ingested = 0
         skipped_non_vessel = 0
         vessel_terms = (
@@ -370,15 +393,29 @@ async def _poll_tenant_imap(db: AsyncSession, conn: MailConnection) -> int:
         )
         single_attempt = settings.llm_parse_single_attempt_on_ingest
 
-        for msg_id in message_ids:
-            _, msg_data = mail.fetch(msg_id, "(RFC822)")
+        for msg_id in ids:
+            if use_uid:
+                _, msg_data = mail.uid("FETCH", msg_id, "(RFC822)")
+            else:
+                _, msg_data = mail.fetch(msg_id, "(RFC822)")
             if not msg_data or not msg_data[0]:
                 continue
 
             raw_email = msg_data[0][1]
+            if raw_email is None:
+                continue
             msg = email_lib.message_from_bytes(raw_email)
 
-            external_id = msg.get("Message-ID", f"imap-{conn.id}-{msg_id.decode()}")
+            # Prefer Message-ID; fallback: UID if available (stable), else sequence (can change).
+            mid = msg.get("Message-ID")
+            if mid:
+                external_id = str(mid).strip()
+            elif use_uid:
+                uid_str = msg_id.decode() if isinstance(msg_id, bytes) else str(msg_id)
+                external_id = f"imap-uid-{conn.id}-{uid_str}"
+            else:
+                mid_str = msg_id.decode() if isinstance(msg_id, bytes) else str(msg_id)
+                external_id = f"imap-{conn.id}-{mid_str}"
             subject = msg.get("Subject")
             sender = msg.get("From")
 
@@ -417,11 +454,14 @@ async def _poll_tenant_imap(db: AsyncSession, conn: MailConnection) -> int:
 
         mail.logout()
         await update_sync_cursor(db, conn.id, None)
+        skipped_other = len(ids) - ingested - skipped_non_vessel
         logger.info(
-            "Tenant IMAP: tenant=%s ingested %d, skipped %d non-vessel-related",
+            "Tenant IMAP: tenant=%s fetched %d, ingested %d, skipped %d non-vessel, %d duplicate/limit",
             conn.tenant_id,
+            len(ids),
             ingested,
             skipped_non_vessel,
+            skipped_other,
         )
         return ingested
 

@@ -1,8 +1,11 @@
 """Mail connection service: CRUD, OAuth helpers, token encryption and refresh."""
 
 import base64
+import imaplib
 import json
 import logging
+import socket
+import ssl
 import uuid
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
@@ -326,6 +329,78 @@ async def upsert_oauth_connection(
     await db.flush()
     await db.refresh(conn)
     return conn
+
+
+# ── IMAP test (Task 6.12) ────────────────────────────────────────────────────
+
+
+def _test_imap_sync(
+    imap_host: str,
+    imap_port: int,
+    imap_user: str,
+    imap_password: str,
+) -> tuple[bool, str, str]:
+    """Test IMAP connection and login. Returns (ok, error_code, message)."""
+    try:
+        mail = imaplib.IMAP4_SSL(imap_host, imap_port, timeout=15)
+        mail.login(imap_user, imap_password)
+        mail.logout()
+        return (True, "", "")
+    except imaplib.IMAP4.error as e:
+        msg = str(e).strip()
+        if "AUTHENTICATIONFAILED" in msg.upper() or "LOGIN" in msg.upper():
+            return (False, "auth_failed", "Authentication failed. Check username and password.")
+        if "REFERRAL" in msg.upper():
+            return (False, "invalid_host", "Invalid host or server configuration.")
+        return (False, "imap_error", msg or "IMAP server error.")
+    except ConnectionRefusedError:
+        return (False, "connection_refused", "Connection refused. Check host, port, and firewall.")
+    except socket.gaierror:
+        return (False, "invalid_host", "Could not resolve host. Check hostname.")
+    except (TimeoutError, socket.timeout):
+        return (False, "timeout", "Connection timed out. Check host, port, and network.")
+    except ssl.SSLError as e:
+        return (False, "ssl_error", f"SSL error: {e}")
+    except OSError as e:
+        return (False, "connection_failed", str(e) or "Connection failed.")
+
+
+async def test_imap_connection(
+    imap_host: str,
+    imap_port: int,
+    imap_user: str,
+    imap_password: str,
+) -> tuple[bool, str, str]:
+    """Async wrapper for IMAP test (runs sync imaplib in thread)."""
+    import asyncio
+
+    return await asyncio.to_thread(
+        _test_imap_sync,
+        imap_host,
+        imap_port,
+        imap_user,
+        imap_password,
+    )
+
+
+def map_imap_exception_to_error(exc: BaseException) -> tuple[str, str]:
+    """Map IMAP-related exceptions to (error_code, user_message)."""
+    if isinstance(exc, imaplib.IMAP4.error):
+        msg = str(exc).strip()
+        if "AUTHENTICATIONFAILED" in msg.upper() or "LOGIN" in msg.upper():
+            return ("auth_failed", "Authentication failed. Check username and password.")
+        if "REFERRAL" in msg.upper():
+            return ("invalid_host", "Invalid host or server configuration.")
+        return ("imap_error", msg or "IMAP server error.")
+    if isinstance(exc, ConnectionRefusedError):
+        return ("connection_refused", "Connection refused. Check host, port, and firewall.")
+    if isinstance(exc, socket.gaierror):
+        return ("invalid_host", "Could not resolve host. Check hostname.")
+    if isinstance(exc, (TimeoutError, socket.timeout)):
+        return ("timeout", "Connection timed out. Check host, port, and network.")
+    if isinstance(exc, ssl.SSLError):
+        return ("ssl_error", f"SSL error: {exc}")
+    return ("connection_failed", str(exc) or "Connection failed.")
 
 
 async def create_imap_connection(

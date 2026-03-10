@@ -13,6 +13,7 @@ from app.schemas.common import ErrorResponse, SingleResponse
 from app.schemas.integrations import ImapConnectionCreate, MailConnectionResponse
 from app.services import audit as audit_svc
 from app.services import mail_connection as mc_svc
+from app.services.mail_connection import map_imap_exception_to_error, test_imap_connection
 
 logger = logging.getLogger("shipflow.integrations")
 
@@ -144,7 +145,7 @@ async def sync_now(
 
     if full:
         await mc_svc.reset_sync_state_for_tenant(db, tenant_id)
-    count = await poll_tenant_connections(db, tenant_id)
+    count = await poll_tenant_connections(db, tenant_id, full=full)
     return {"ingested": count}
 
 
@@ -192,7 +193,27 @@ async def disconnect(
     )
 
 
-# ── IMAP connection (Task 6.8) ───────────────────────────────────────────────
+# ── IMAP connection (Task 6.8, 6.12) ────────────────────────────────────────
+
+
+@router.post(
+    "/imap/test",
+    responses={200: {"description": "Test ok or failed with error"}},
+)
+async def test_imap(
+    body: ImapConnectionCreate,
+    current_user: CurrentUser = Depends(RequirePermission("admin:users")),
+) -> dict:
+    """Test IMAP credentials without persisting. Same permission as add."""
+    ok, error_code, error_msg = await test_imap_connection(
+        body.imap_host,
+        body.imap_port,
+        body.imap_user,
+        body.imap_password,
+    )
+    if ok:
+        return {"ok": True}
+    return {"ok": False, "error": error_msg, "error_code": error_code}
 
 
 @router.post(
@@ -208,14 +229,46 @@ async def add_imap_connection(
     tenant_id: uuid.UUID = Depends(get_tenant_id),
     db: AsyncSession = Depends(get_db),
 ) -> SingleResponse[MailConnectionResponse]:
-    conn = await mc_svc.create_imap_connection(
-        db,
-        tenant_id,
-        imap_host=body.imap_host,
-        imap_port=body.imap_port,
-        imap_user=body.imap_user,
-        imap_password=body.imap_password,
+    # Validate connection before persisting (Task 6.12: structured error handling)
+    ok, error_code, error_msg = await test_imap_connection(
+        body.imap_host,
+        body.imap_port,
+        body.imap_user,
+        body.imap_password,
     )
+    if not ok:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": {
+                    "code": error_code,
+                    "message": error_msg,
+                    "details": None,
+                }
+            },
+        )
+
+    try:
+        conn = await mc_svc.create_imap_connection(
+            db,
+            tenant_id,
+            imap_host=body.imap_host,
+            imap_port=body.imap_port,
+            imap_user=body.imap_user,
+            imap_password=body.imap_password,
+        )
+    except Exception as exc:
+        error_code, error_msg = map_imap_exception_to_error(exc)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": {
+                    "code": error_code,
+                    "message": error_msg,
+                    "details": None,
+                }
+            },
+        )
 
     await audit_svc.log_action(
         db,
