@@ -82,7 +82,7 @@ export function UserForm() {
   if (loading) return <LoadingSpinner />;
 
   const inputClass =
-    "w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm transition-colors focus:border-mint-500 focus:outline-none focus:ring-2 focus:ring-mint-500/20 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100";
+    "w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 transition-colors focus:border-mint-500 focus:outline-none focus:ring-2 focus:ring-mint-500/20";
 
   return (
     <div>

@@ -12,7 +12,6 @@ import {
   Sparkles,
   ChevronsLeft,
   ChevronsRight,
-  User,
 } from "lucide-react";
 import {
   Tooltip,
@@ -184,41 +183,33 @@ export function Sidebar({
           isCollapsed={isCollapsed}
         />
 
-        <>
-          <SectionDivider label="Settings" isCollapsed={isCollapsed} />
-          <NavItem
-            to="/settings/profile"
-            icon={User}
-            label="Profile"
-            isCollapsed={isCollapsed}
-          />
-          {showOtherSettings && (
-            <>
+        {showOtherSettings && (
+          <>
+            <SectionDivider label="Settings" isCollapsed={isCollapsed} />
+            <NavItem
+              to="/settings/integrations"
+              icon={Settings}
+              label="Integrations"
+              isCollapsed={isCollapsed}
+            />
+            {(hasSettingsWrite || isPlatformAdmin) && (
               <NavItem
-                to="/settings/integrations"
-                icon={Settings}
-                label="Integrations"
+                to="/settings/ai"
+                icon={Sparkles}
+                label="AI Settings"
                 isCollapsed={isCollapsed}
               />
-              {(hasSettingsWrite || isPlatformAdmin) && (
-                <NavItem
-                  to="/settings/ai"
-                  icon={Sparkles}
-                  label="AI Settings"
-                  isCollapsed={isCollapsed}
-                />
-              )}
-              {(hasBillingManage || isPlatformAdmin) && (
-                <NavItem
-                  to="/settings/billing"
-                  icon={CreditCard}
-                  label="Billing"
-                  isCollapsed={isCollapsed}
-                />
-              )}
-            </>
-          )}
-        </>
+            )}
+            {(hasBillingManage || isPlatformAdmin) && (
+              <NavItem
+                to="/settings/billing"
+                icon={CreditCard}
+                label="Billing"
+                isCollapsed={isCollapsed}
+              />
+            )}
+          </>
+        )}
 
       </nav>
 

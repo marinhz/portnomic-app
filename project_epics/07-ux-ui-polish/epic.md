@@ -30,6 +30,7 @@ Elevate the ShipFlow frontend with a modern, consistent design system: shadcn/ui
 - [Task 7.7](tasks/task-07-topnav-logo-theme.md) — Remove logo from topnav, add light/dark theme switcher
 - [Task 7.8](tasks/task-08-dashboard-cards-overlay-bug.md) — Bug: Dashboard cards overlay — vessels/portcalls over disbursements
 - [Task 7.9](tasks/task-09-login-page-error-and-input-visibility-bug.md) — Bug: Login page — wrong credentials error not shown, input text not visible
+- [Task 7.11](tasks/task-11-dark-mode-form-fields-text-not-visible-bug.md) — Bug: Dark mode — form fields text not visible (port call and other forms)
 
 ---
 

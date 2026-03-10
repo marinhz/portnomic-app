@@ -37,32 +37,32 @@ export function DAGenerate() {
 
   return (
     <div className="mx-auto max-w-lg">
-      <h1 className="mb-6 text-2xl font-bold text-slate-800">
+      <h1 className="mb-6 text-2xl font-bold text-slate-800 dark:text-slate-100">
         Generate Disbursement Account
       </h1>
 
       <form onSubmit={handleGenerate}>
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
           {error && (
-            <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+            <div className="mb-4 rounded-lg bg-red-50 dark:bg-red-900/30 p-3 text-sm text-red-700 dark:text-red-200">
               {error}
             </div>
           )}
 
           <div className="mb-4">
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               Port Call ID
             </label>
             <input
               type="text"
               value={portCallId}
               readOnly
-              className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-500"
+              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-sm text-slate-500 dark:text-slate-400"
             />
           </div>
 
           <div className="mb-6">
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               DA Type
             </label>
             <div className="flex gap-4">
@@ -75,7 +75,7 @@ export function DAGenerate() {
                   onChange={() => setDaType("proforma")}
                   className="text-mint-500"
                 />
-                <span className="text-sm text-slate-700">Proforma</span>
+                <span className="text-sm text-slate-700 dark:text-slate-300">Proforma</span>
               </label>
               <label className="flex items-center gap-2">
                 <input
@@ -86,7 +86,7 @@ export function DAGenerate() {
                   onChange={() => setDaType("final")}
                   className="text-mint-500"
                 />
-                <span className="text-sm text-slate-700">Final</span>
+                <span className="text-sm text-slate-700 dark:text-slate-300">Final</span>
               </label>
             </div>
           </div>
