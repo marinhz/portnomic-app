@@ -3,7 +3,6 @@
 import os
 
 import pytest
-from httpx import ASGITransport, AsyncClient
 
 # Ensure platform admin is set for tests that need it
 os.environ.setdefault("PLATFORM_ADMIN_EMAILS", "admin@portnomic.ai")

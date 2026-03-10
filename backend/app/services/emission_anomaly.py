@@ -13,9 +13,9 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.emission_report import (
-    EmissionReport,
     REPORT_STATUS_FLAGGED,
     REPORT_STATUS_VERIFIED,
+    EmissionReport,
 )
 from app.models.vessel import Vessel
 
@@ -110,7 +110,6 @@ def run_anomaly_checks(
         for e in report.fuel_entries
         if (e.operational_status or "").lower().strip().replace(" ", "_") == AT_SEA_STATUS
     )
-    total_consumption = sum(float(e.consumption_mt) for e in report.fuel_entries)
     flag1 = _check_consumption_vs_distance(
         distance_nm=report.distance_nm,
         at_sea_consumption_mt=at_sea_consumption,

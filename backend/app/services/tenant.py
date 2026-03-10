@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.role import Role
 from app.models.tenant import Tenant
 from app.models.user import User
-from app.schemas.tenant import TenantCreate, TenantUpdate
+from app.schemas.tenant import TenantUpdate
 from app.services.auth import hash_password
 
 SLUG_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*[a-z0-9]$")

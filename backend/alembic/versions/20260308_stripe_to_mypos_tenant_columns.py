@@ -6,7 +6,6 @@ Create Date: 2026-03-08
 
 """
 
-import sqlalchemy as sa
 from alembic import op
 
 revision = "20260308_mypos"

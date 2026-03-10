@@ -8,7 +8,7 @@ from app.dependencies.rbac import RequirePermission
 from app.dependencies.tenant import get_tenant_id
 from app.schemas.auth import CurrentUser
 from app.schemas.common import ErrorResponse, PaginatedResponse, PaginationMeta, SingleResponse
-from app.schemas.port import PortCreate, PortResponse, PortUpdate
+from app.schemas.port import PortCreate, PortResponse
 from app.services import audit as audit_svc
 from app.services import port as port_svc
 

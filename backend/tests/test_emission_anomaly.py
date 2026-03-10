@@ -3,8 +3,6 @@
 import uuid
 from datetime import date
 
-import pytest
-
 from app.models.emission_report import EmissionReport, FuelEntry
 from app.models.vessel import Vessel
 from app.services.emission_anomaly import run_anomaly_checks

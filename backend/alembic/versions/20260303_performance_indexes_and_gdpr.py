@@ -5,8 +5,9 @@ Revises: c2d356803e41
 Create Date: 2026-03-03
 """
 
-from alembic import op
 import sqlalchemy as sa
+
+from alembic import op
 
 revision = "20260303_perf_gdpr"
 down_revision = "c2d356803e41"

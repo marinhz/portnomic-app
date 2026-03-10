@@ -4,9 +4,12 @@ from datetime import datetime, timezone
 
 import pyotp
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings as app_settings
 from app.dependencies.auth import get_current_user
 from app.dependencies.database import get_db
 from app.middleware.metrics import auth_login_attempts_total, auth_login_failures_total
@@ -27,10 +30,6 @@ from app.schemas.auth import (
 from app.schemas.common import ErrorResponse, SingleResponse
 from app.services import audit as audit_svc
 from app.services import auth as auth_svc
-
-from app.config import settings as app_settings
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 
 auth_limiter = Limiter(key_func=get_remote_address)
 

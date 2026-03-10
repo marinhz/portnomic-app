@@ -1,17 +1,16 @@
 """Mail connection service: CRUD, OAuth helpers, token encryption and refresh."""
 
+import base64
 import json
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
-import base64
-
 import httpx
 from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 

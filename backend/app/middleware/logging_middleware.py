@@ -6,7 +6,7 @@ import time
 import uuid
 from base64 import urlsafe_b64decode
 from contextvars import ContextVar
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint

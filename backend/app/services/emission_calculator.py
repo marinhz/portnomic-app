@@ -9,7 +9,7 @@ EU ETS applicability from operational status (100% at berth, 50% EU waters).
 from typing import Protocol
 
 from app.emission_constants import get_emission_factor, get_eu_ets_factor
-from app.schemas.emission import EUAEstimate, EmissionsResult, FuelBreakdown
+from app.schemas.emission import EmissionsResult, EUAEstimate, FuelBreakdown
 
 
 class ReportLike(Protocol):

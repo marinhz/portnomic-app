@@ -11,7 +11,7 @@ Usage:
 import asyncio
 from datetime import date, datetime, timedelta, timezone
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session_factory
@@ -198,7 +198,7 @@ async def seed_marketing(db: AsyncSession) -> None:
         db.add(da)
 
     await db.flush()
-    print(f"  Created 12 disbursement accounts")
+    print("  Created 12 disbursement accounts")
 
     # Create emission reports with fuel entries
     fuel_types = ["VLSFO", "LNG", "MDO"]
@@ -230,7 +230,7 @@ async def seed_marketing(db: AsyncSession) -> None:
             )
             db.add(fe)
 
-    print(f"  Created 6 emission reports with fuel entries")
+    print("  Created 6 emission reports with fuel entries")
 
     # Create email integrations (MailConnection) - for Settings > Integrations screenshots
     conn_result = await db.execute(
@@ -272,7 +272,7 @@ async def seed_marketing(db: AsyncSession) -> None:
         for conn in integrations:
             db.add(conn)
         await db.flush()
-        print(f"  Created 3 email integrations (Gmail, Outlook, IMAP)")
+        print("  Created 3 email integrations (Gmail, Outlook, IMAP)")
     else:
         for c in existing_conns:
             c.status = "connected"

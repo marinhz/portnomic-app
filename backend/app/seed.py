@@ -69,7 +69,7 @@ async def seed(db: AsyncSession) -> None:
         db.add(super_admin_user)
         await db.commit()
         print("Super admin user added for screenshots.")
-        print(f"  admin@portnomic.com / admin123")
+        print("  admin@portnomic.com / admin123")
         return
 
     tenant = Tenant(id=TENANT_ID, name="Portnomic Demo", slug="demo", plan="enterprise")
@@ -122,10 +122,10 @@ async def seed(db: AsyncSession) -> None:
     await db.commit()
     print("Seed data created successfully!")
     print(f"  Tenant: Portnomic Demo ({TENANT_ID})")
-    print(f"  Admin user: admin@shipflow.ai / admin123")
-    print(f"  Super admin (screenshots): admin@portnomic.com / admin123")
-    print(f"  Roles: Admin, Operator")
-    print(f"  Ports: Rotterdam, Singapore, Shanghai, Hamburg, Piraeus")
+    print("  Admin user: admin@shipflow.ai / admin123")
+    print("  Super admin (screenshots): admin@portnomic.com / admin123")
+    print("  Roles: Admin, Operator")
+    print("  Ports: Rotterdam, Singapore, Shanghai, Hamburg, Piraeus")
 
 
 async def main() -> None:

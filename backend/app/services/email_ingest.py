@@ -10,9 +10,9 @@ from email.utils import parsedate_to_datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.redis_client import redis_client
 from app.models.email import Email
 from app.models.parse_job import ParseJob
+from app.redis_client import redis_client
 from app.services.email_service import get_email_by_external_id
 from app.services.limits import UPGRADE_MESSAGES, check_ai_parse_limit
 from app.services.vessel_filter import get_tenant_vessel_terms, is_vessel_related_email

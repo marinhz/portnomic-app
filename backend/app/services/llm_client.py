@@ -3,7 +3,7 @@ import logging
 import uuid
 from dataclasses import dataclass
 
-from openai import AsyncOpenAI, APIConnectionError, APITimeoutError, RateLimitError
+from openai import APIConnectionError, APITimeoutError, AsyncOpenAI, RateLimitError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings

@@ -10,6 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies.database import get_db
 from app.dependencies.rbac import RequirePermission
 from app.dependencies.tenant import get_tenant_id
+from app.models.emission_report import (
+    REPORT_STATUS_FAILED,
+    REPORT_STATUS_FLAGGED,
+    REPORT_STATUS_VERIFIED,
+)
 from app.models.parse_job import ParseJob
 from app.redis_client import redis_client
 from app.schemas.ai import ParseJobResponse, ParseRequest
@@ -24,14 +29,12 @@ from app.schemas.emission import (
     EmissionsCalculateResponse,
     EmissionsSummaryResponse,
 )
+from app.services import audit as audit_svc
+from app.services import email_service, parse_job_service
+from app.services import emission_export as emission_export_svc
+from app.services import emission_report as emission_report_svc
 from app.services.carbon_price import get_current_price_eur
 from app.services.emission_calculator import calculate_emissions, estimate_eua
-from app.services import audit as audit_svc
-from app.services import email_service
-from app.services import emission_report as emission_report_svc
-from app.services import emission_export as emission_export_svc
-from app.services import parse_job_service
-from app.models.emission_report import REPORT_STATUS_FAILED, REPORT_STATUS_FLAGGED, REPORT_STATUS_VERIFIED
 from app.services.limits import check_ai_parse_limit, raise_if_over_limit
 
 router = APIRouter(prefix="/api/v1/emissions", tags=["emissions"])

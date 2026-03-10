@@ -7,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.tenant_prompt_override import ParserType
 from app.schemas.emission import (
-    EXTRACTION_SCHEMA_VERSION,
     FUEL_TYPES,
     OPERATIONAL_STATUSES,
     EmissionExtractionResult,

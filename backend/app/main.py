@@ -13,10 +13,27 @@ from sqlalchemy import text
 from app.config import settings
 from app.database import engine
 from app.middleware.logging_middleware import RequestContextMiddleware, setup_logging
-from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.middleware.metrics import PrometheusMiddleware, metrics_endpoint
+from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.redis_client import redis_client
-from app.routers import admin, ai, ai_settings, auth, billing, da, emails, emissions, gdpr, integrations, platform, port_calls, ports, tariffs, vessels, webhooks
+from app.routers import (
+    admin,
+    ai,
+    ai_settings,
+    auth,
+    billing,
+    da,
+    emails,
+    emissions,
+    gdpr,
+    integrations,
+    platform,
+    port_calls,
+    ports,
+    tariffs,
+    vessels,
+    webhooks,
+)
 
 setup_logging(settings.log_level)
 logger = logging.getLogger("shipflow")

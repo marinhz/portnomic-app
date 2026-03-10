@@ -7,15 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies.database import get_db
 from app.dependencies.rbac import RequirePermission
 from app.dependencies.tenant import get_tenant_id
-from app.models.email import Email
 from app.models.parse_job import ParseJob
 from app.redis_client import redis_client
 from app.schemas.ai import EmailStatusUpdate, ParseJobResponse, ParseRequest
 from app.schemas.auth import CurrentUser
 from app.schemas.common import ErrorResponse, SingleResponse
 from app.services import audit as audit_svc
-from app.services import email_service
-from app.services import parse_job_service
+from app.services import email_service, parse_job_service
 from app.services.limits import check_ai_parse_limit, raise_if_over_limit
 
 logger = logging.getLogger("shipflow.ai")
