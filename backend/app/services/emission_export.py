@@ -313,7 +313,11 @@ def _render_emission_report_html(mrv_data: dict[str, Any]) -> str:
     for b in mrv_data.get("co2_emissions", {}).get("per_fuel_breakdown", []):
         fuel_entries = mrv_data.get("fuel_consumption_by_type", [])
         op_status = next(
-            (f.get("operational_status", "—") for f in fuel_entries if f.get("fuel_type") == b.get("fuel_type")),
+            (
+                f.get("operational_status", "—")
+                for f in fuel_entries
+                if f.get("fuel_type") == b.get("fuel_type")
+            ),
             "—",
         )
         fuel_rows += (
@@ -358,7 +362,11 @@ def export_pdf(mrv_data: dict[str, Any]) -> tuple[bytes, str]:
         from weasyprint import HTML
 
         pdf_bytes = HTML(string=html).write_pdf()
-        logger.info("Generated EU MRV PDF for report %s (%d bytes)", mrv_data.get("report_id"), len(pdf_bytes))
+        logger.info(
+            "Generated EU MRV PDF for report %s (%d bytes)",
+            mrv_data.get("report_id"),
+            len(pdf_bytes),
+        )
         return (pdf_bytes, "application/pdf")
     except ImportError:
         logger.warning("WeasyPrint not installed; falling back to HTML")

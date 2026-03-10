@@ -50,7 +50,11 @@ async def list_das(
     "/generate",
     response_model=SingleResponse[DAResponse],
     status_code=status.HTTP_201_CREATED,
-    responses={400: {"model": ErrorResponse}, 403: {"description": "Plan limit exceeded (upgrade_required)"}, 404: {"model": ErrorResponse}},
+    responses={
+        400: {"model": ErrorResponse},
+        403: {"description": "Plan limit exceeded (upgrade_required)"},
+        404: {"model": ErrorResponse},
+    },
 )
 async def generate_da(
     body: DAGenerateRequest,
@@ -189,7 +193,12 @@ async def send_da(
     if da.status != "approved":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"error": {"code": "INVALID_STATUS", "message": f"DA must be approved to send (current: {da.status})"}},
+            detail={
+                "error": {
+                    "code": "INVALID_STATUS",
+                    "message": f"DA must be approved to send (current: {da.status})",
+                }
+            },
         )
 
     to_addresses = body.to_addresses if body and body.to_addresses else []

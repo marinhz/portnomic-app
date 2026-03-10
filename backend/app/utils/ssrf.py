@@ -36,8 +36,6 @@ def validate_llm_base_url(url: str | None) -> None:
     if not host:
         raise ValueError("Invalid LLM base_url: no host")
     if _is_private_host(host):
-        raise ValueError(
-            f"LLM base_url cannot target private/localhost addresses: {host}"
-        )
+        raise ValueError(f"LLM base_url cannot target private/localhost addresses: {host}")
     if parsed.scheme not in ("http", "https"):
         raise ValueError("LLM base_url must use http or https")

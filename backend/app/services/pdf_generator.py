@@ -96,12 +96,12 @@ def render_da_html(da_data: dict) -> str:
     rows = ""
     for item in line_items:
         rows += (
-            f'<tr>'
-            f'<td>{item.get("description", "")}</td>'
+            f"<tr>"
+            f"<td>{item.get('description', '')}</td>"
             f'<td class="qty">{item.get("quantity", 1)}</td>'
             f'<td class="amount">{item.get("unit_price", 0):,.2f}</td>'
             f'<td class="amount">{item.get("amount", 0):,.2f}</td>'
-            f'</tr>'
+            f"</tr>"
         )
 
     da_id = str(da_data.get("id", ""))
@@ -113,9 +113,9 @@ def render_da_html(da_data: dict) -> str:
         status=da_data.get("status", "draft").replace("_", " ").title(),
         currency=currency,
         line_items_rows=rows,
-        subtotal=f'{totals.get("subtotal", 0):,.2f}',
-        tax=f'{totals.get("tax", 0):,.2f}',
-        total=f'{totals.get("total", 0):,.2f}',
+        subtotal=f"{totals.get('subtotal', 0):,.2f}",
+        tax=f"{totals.get('tax', 0):,.2f}",
+        total=f"{totals.get('total', 0):,.2f}",
     )
 
 
@@ -125,6 +125,7 @@ async def generate_pdf(da_data: dict) -> bytes:
 
     try:
         from weasyprint import HTML
+
         pdf_bytes = HTML(string=html).write_pdf()
     except ImportError:
         logger.warning("WeasyPrint not installed; falling back to HTML-as-PDF placeholder")

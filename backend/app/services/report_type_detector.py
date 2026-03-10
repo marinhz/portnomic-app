@@ -18,9 +18,7 @@ NOON_BUNKER_KEYWORDS = (
 
 def is_emission_report(subject: str | None, body_text: str | None, body_html: str | None) -> bool:
     """Return True if email appears to be a Noon Report or Bunker Report."""
-    combined = " ".join(
-        filter(None, [subject or "", body_text or "", body_html or ""])
-    ).lower()
+    combined = " ".join(filter(None, [subject or "", body_text or "", body_html or ""])).lower()
     if not combined.strip():
         return False
     for keyword in NOON_BUNKER_KEYWORDS:

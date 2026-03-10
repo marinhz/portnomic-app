@@ -11,9 +11,7 @@ from app.models.base import Base
 class Port(Base):
     __tablename__ = "ports"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tenant_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True
     )
@@ -28,6 +26,4 @@ class Port(Base):
     tenant = relationship("Tenant", back_populates="ports")
     port_calls = relationship("PortCall", back_populates="port", lazy="selectin")
 
-    __table_args__ = (
-        Index("ix_ports_tenant_code", "tenant_id", "code"),
-    )
+    __table_args__ = (Index("ix_ports_tenant_code", "tenant_id", "code"),)

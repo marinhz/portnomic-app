@@ -25,7 +25,11 @@ router = APIRouter(prefix="/api/v1/ai", tags=["ai"])
     "/parse",
     response_model=SingleResponse[ParseJobResponse],
     status_code=status.HTTP_202_ACCEPTED,
-    responses={403: {"description": "Plan limit exceeded (upgrade_required)"}, 404: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+    responses={
+        403: {"description": "Plan limit exceeded (upgrade_required)"},
+        404: {"model": ErrorResponse},
+        409: {"model": ErrorResponse},
+    },
 )
 async def submit_parse(
     body: ParseRequest,
@@ -91,7 +95,9 @@ async def submit_parse(
     )
     logger.info(
         "Parse job enqueued job_id=%s email_id=%s tenant_id=%s",
-        job.id, em.id, tenant_id,
+        job.id,
+        em.id,
+        tenant_id,
     )
 
     return SingleResponse(data=ParseJobResponse.model_validate(job))

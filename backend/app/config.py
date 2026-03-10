@@ -130,6 +130,7 @@ class Settings(BaseSettings):
         if self.environment != "production":
             if self.jwt_secret == "change-me" or self.mfa_encryption_key == "change-me":
                 import logging
+
                 logging.getLogger("shipflow.config").warning(
                     "SECURITY: Using default JWT_SECRET or MFA_ENCRYPTION_KEY in non-production. "
                     "Set JWT_SECRET and MFA_ENCRYPTION_KEY in all environments."

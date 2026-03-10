@@ -35,16 +35,12 @@ async def _resolve_vessel(
         return None
 
     if result.vessel_imo:
-        stmt = select(Vessel).where(
-            Vessel.tenant_id == tenant_id, Vessel.imo == result.vessel_imo
-        )
+        stmt = select(Vessel).where(Vessel.tenant_id == tenant_id, Vessel.imo == result.vessel_imo)
         existing = (await db.execute(stmt)).scalar_one_or_none()
         if existing:
             return existing.id
 
-    stmt = select(Vessel).where(
-        Vessel.tenant_id == tenant_id, Vessel.name == result.vessel_name
-    )
+    stmt = select(Vessel).where(Vessel.tenant_id == tenant_id, Vessel.name == result.vessel_name)
     existing = (await db.execute(stmt)).scalar_one_or_none()
     if existing:
         return existing.id
@@ -129,16 +125,12 @@ async def _resolve_vessel_for_emission(
         return None
 
     if result.imo_number and result.imo_number != "UNKNOWN":
-        stmt = select(Vessel).where(
-            Vessel.tenant_id == tenant_id, Vessel.imo == result.imo_number
-        )
+        stmt = select(Vessel).where(Vessel.tenant_id == tenant_id, Vessel.imo == result.imo_number)
         existing = (await db.execute(stmt)).scalar_one_or_none()
         if existing:
             return existing.id
 
-    stmt = select(Vessel).where(
-        Vessel.tenant_id == tenant_id, Vessel.name == result.vessel_name
-    )
+    stmt = select(Vessel).where(Vessel.tenant_id == tenant_id, Vessel.name == result.vessel_name)
     existing = (await db.execute(stmt)).scalar_one_or_none()
     if existing:
         return existing.id
@@ -194,9 +186,7 @@ async def _process_emission_email(
 ) -> None:
     """Parse email as Noon/Bunker report and persist EmissionReport."""
     try:
-        result = await parse_emission_content(
-            body, email.subject, tenant_id=email.tenant_id, db=db
-        )
+        result = await parse_emission_content(body, email.subject, tenant_id=email.tenant_id, db=db)
     except LlmConfigError as exc:
         logger.warning("LLM config error for emission email %s: %s", email.id, exc)
         job.status = "failed"
@@ -334,8 +324,11 @@ async def process_email(
     )
     try:
         result = await parse_email_content(
-            prompt_text, body, email.subject,
-            tenant_id=email.tenant_id, db=db,
+            prompt_text,
+            body,
+            email.subject,
+            tenant_id=email.tenant_id,
+            db=db,
         )
     except LlmConfigError as exc:
         logger.warning("LLM config error for email %s: %s", email_id, exc)

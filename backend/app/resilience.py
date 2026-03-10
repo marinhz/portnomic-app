@@ -97,16 +97,12 @@ class CircuitBreaker:
         async with self._lock:
             state = self.state
             if state == CircuitState.OPEN:
-                raise CircuitBreakerOpen(
-                    f"Circuit breaker '{self.name}' is open"
-                )
+                raise CircuitBreakerOpen(f"Circuit breaker '{self.name}' is open")
             if (
                 state == CircuitState.HALF_OPEN
                 and self._half_open_calls >= self.half_open_max_calls
             ):
-                raise CircuitBreakerOpen(
-                    f"Circuit breaker '{self.name}' half-open limit reached"
-                )
+                raise CircuitBreakerOpen(f"Circuit breaker '{self.name}' half-open limit reached")
             if state == CircuitState.HALF_OPEN:
                 self._half_open_calls += 1
 
@@ -121,9 +117,7 @@ class CircuitBreaker:
     async def _on_success(self):
         async with self._lock:
             if self._state == CircuitState.HALF_OPEN:
-                logger.info(
-                    "Circuit breaker '%s' recovered, closing", self.name
-                )
+                logger.info("Circuit breaker '%s' recovered, closing", self.name)
             self._failure_count = 0
             self._state = CircuitState.CLOSED
             circuit_breaker_state.labels(name=self.name).set(0)

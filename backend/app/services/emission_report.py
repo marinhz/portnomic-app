@@ -42,7 +42,11 @@ async def list_emission_reports(
         count_base = count_base.where(EmissionReport.report_date <= date_to)
 
     total = (await db.execute(select(func.count()).select_from(count_base))).scalar() or 0
-    stmt = base.order_by(EmissionReport.report_date.desc()).offset((page - 1) * per_page).limit(per_page)
+    stmt = (
+        base.order_by(EmissionReport.report_date.desc())
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+    )
     result = await db.execute(stmt)
     return list(result.scalars().all()), total
 

@@ -19,9 +19,7 @@ async def list_prompt_overrides(
     tenant_id: uuid.UUID,
 ) -> list[dict[str, str]]:
     """List all prompt overrides for tenant. Returns parser_type, prompt_text, version."""
-    stmt = select(TenantPromptOverride).where(
-        TenantPromptOverride.tenant_id == tenant_id
-    )
+    stmt = select(TenantPromptOverride).where(TenantPromptOverride.tenant_id == tenant_id)
     result = await db.execute(stmt)
     overrides = result.scalars().all()
     return [

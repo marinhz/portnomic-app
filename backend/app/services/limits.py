@@ -83,10 +83,7 @@ class LimitResult:
     def upgrade_message(self) -> str:
         if self.limit is None:
             return ""
-        return (
-            f"Plan limit reached ({self.current}/{self.limit}). "
-            "Upgrade your plan to add more."
-        )
+        return f"Plan limit reached ({self.current}/{self.limit}). Upgrade your plan to add more."
 
 
 def raise_if_over_limit(result: LimitResult, limit_type: LimitType) -> None:
@@ -141,9 +138,7 @@ async def check_vessel_limit(db: AsyncSession, tenant_id: uuid.UUID) -> LimitRes
     """Check if tenant can add another vessel. Returns LimitResult."""
     plan = await _get_tenant_plan(db, tenant_id)
     limit = _get_limit(plan, "vessels")
-    count_q = (
-        select(func.count()).select_from(Vessel).where(Vessel.tenant_id == tenant_id)
-    )
+    count_q = select(func.count()).select_from(Vessel).where(Vessel.tenant_id == tenant_id)
     current = (await db.execute(count_q)).scalar_one()
     allowed = limit is None or current < limit
     return LimitResult(allowed=allowed, limit=limit, current=current, plan=plan)

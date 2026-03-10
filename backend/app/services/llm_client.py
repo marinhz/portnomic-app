@@ -64,15 +64,11 @@ async def _get_llm_config(
             api_key, base_url, model = creds
             return LlmConfig(api_key=api_key, base_url=base_url, model=model)
         if config is not None and config.enabled and config.api_key_encrypted:
-            raise LlmConfigError(
-                "API key invalid or expired. Please update in Settings."
-            )
+            raise LlmConfigError("API key invalid or expired. Please update in Settings.")
 
     # Platform fallback
     if not settings.llm_api_key or not settings.llm_api_key.strip():
-        raise LlmConfigError(
-            "AI parsing not configured. Contact your administrator."
-        )
+        raise LlmConfigError("AI parsing not configured. Contact your administrator.")
     return LlmConfig(
         api_key=settings.llm_api_key,
         base_url=settings.llm_api_url,
@@ -156,9 +152,7 @@ async def parse_email_content(
         user_content = user_content[:max_chars] + "\n\n[... truncated for token limit ...]"
         logger.info("Email truncated from %d to %d chars for LLM", original_len, max_chars)
 
-    raw_result = await call_llm(
-        system_prompt, user_content, tenant_id=tenant_id, db=db
-    )
+    raw_result = await call_llm(system_prompt, user_content, tenant_id=tenant_id, db=db)
     return ParsedEmailResult.model_validate(raw_result)
 
 

@@ -27,11 +27,7 @@ async def list_port_calls(
 
     total = (await db.execute(count_base)).scalar_one()
 
-    q = (
-        base.order_by(PortCall.created_at.desc())
-        .offset((page - 1) * per_page)
-        .limit(per_page)
-    )
+    q = base.order_by(PortCall.created_at.desc()).offset((page - 1) * per_page).limit(per_page)
     result = await db.execute(q)
     return list(result.scalars().all()), total
 
@@ -40,9 +36,7 @@ async def get_port_call(
     db: AsyncSession, tenant_id: uuid.UUID, port_call_id: uuid.UUID
 ) -> PortCall | None:
     result = await db.execute(
-        select(PortCall).where(
-            PortCall.id == port_call_id, PortCall.tenant_id == tenant_id
-        )
+        select(PortCall).where(PortCall.id == port_call_id, PortCall.tenant_id == tenant_id)
     )
     return result.scalar_one_or_none()
 

@@ -26,11 +26,13 @@ def setup_telemetry(app=None, engine=None):
         logger.info("OpenTelemetry disabled")
         return
 
-    resource = Resource.create({
-        "service.name": settings.otel_service_name,
-        "service.version": "1.0.0",
-        "deployment.environment": settings.environment,
-    })
+    resource = Resource.create(
+        {
+            "service.name": settings.otel_service_name,
+            "service.version": "1.0.0",
+            "deployment.environment": settings.environment,
+        }
+    )
 
     provider = TracerProvider(resource=resource)
 

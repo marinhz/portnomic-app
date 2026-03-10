@@ -98,9 +98,7 @@ async def update_port_call(
     tenant_id: uuid.UUID = Depends(get_tenant_id),
     db: AsyncSession = Depends(get_db),
 ) -> SingleResponse[PortCallResponse]:
-    port_call = await port_call_svc.update_port_call(
-        db, tenant_id, port_call_id, body
-    )
+    port_call = await port_call_svc.update_port_call(db, tenant_id, port_call_id, body)
     if port_call is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

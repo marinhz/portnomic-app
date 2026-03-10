@@ -11,9 +11,7 @@ from app.services.cache import cache_delete_pattern, cache_get, cache_set, make_
 async def list_ports(
     db: AsyncSession, tenant_id: uuid.UUID, page: int = 1, per_page: int = 20
 ) -> tuple[list[Port], int]:
-    base = select(Port).where(
-        (Port.tenant_id == tenant_id) | (Port.tenant_id.is_(None))
-    )
+    base = select(Port).where((Port.tenant_id == tenant_id) | (Port.tenant_id.is_(None)))
     count_result = await db.execute(select(func.count()).select_from(base.subquery()))
     total = count_result.scalar() or 0
 
@@ -23,9 +21,7 @@ async def list_ports(
     return list(result.scalars().all()), total
 
 
-async def get_port(
-    db: AsyncSession, tenant_id: uuid.UUID, port_id: uuid.UUID
-) -> Port | None:
+async def get_port(db: AsyncSession, tenant_id: uuid.UUID, port_id: uuid.UUID) -> Port | None:
     cache_key = make_cache_key(str(tenant_id), "ports", str(port_id))
     cached = await cache_get(cache_key)
     if cached is not None:
@@ -49,9 +45,7 @@ async def get_port(
     return port
 
 
-async def create_port(
-    db: AsyncSession, tenant_id: uuid.UUID, data: PortCreate
-) -> Port:
+async def create_port(db: AsyncSession, tenant_id: uuid.UUID, data: PortCreate) -> Port:
     port = Port(tenant_id=tenant_id, **data.model_dump())
     db.add(port)
     await db.flush()

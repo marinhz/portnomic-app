@@ -59,7 +59,9 @@ async def poll_all_tenant_connections(db: AsyncSession) -> int:
         except Exception as exc:
             logger.exception(
                 "Failed to poll connection %s (provider=%s, tenant=%s)",
-                conn.id, conn.provider, conn.tenant_id,
+                conn.id,
+                conn.provider,
+                conn.tenant_id,
             )
             await mark_connection_error(db, conn.id, str(exc)[:500])
 
@@ -92,7 +94,9 @@ async def poll_tenant_connections(db: AsyncSession, tenant_id: uuid.UUID) -> int
         except Exception as exc:
             logger.exception(
                 "Failed to poll connection %s (provider=%s, tenant=%s)",
-                conn.id, conn.provider, conn.tenant_id,
+                conn.id,
+                conn.provider,
+                conn.tenant_id,
             )
             await mark_connection_error(db, conn.id, str(exc)[:500])
     return total
@@ -130,9 +134,7 @@ async def _poll_gmail(db: AsyncSession, conn: MailConnection) -> int:
     skipped_duplicates = 0
     skipped_non_vessel = 0
     vessel_terms = (
-        await get_tenant_vessel_terms(db, conn.tenant_id)
-        if settings.llm_vessel_only_sync
-        else []
+        await get_tenant_vessel_terms(db, conn.tenant_id) if settings.llm_vessel_only_sync else []
     )
     single_attempt = settings.llm_parse_single_attempt_on_ingest
 
@@ -152,7 +154,10 @@ async def _poll_gmail(db: AsyncSession, conn: MailConnection) -> int:
         messages = data.get("messages", [])
         logger.info(
             "Gmail list: tenant=%s q=%r labelIds=%r returned %d message(s)",
-            conn.tenant_id, params.get("q"), params.get("labelIds"), len(messages),
+            conn.tenant_id,
+            params.get("q"),
+            params.get("labelIds"),
+            len(messages),
         )
         next_page = data.get("nextPageToken")
 
@@ -201,7 +206,10 @@ async def _poll_gmail(db: AsyncSession, conn: MailConnection) -> int:
     await update_sync_cursor(db, conn.id, cursor_to_save)
     logger.info(
         "Gmail: tenant=%s ingested %d, skipped %d duplicate(s), %d non-vessel-related",
-        conn.tenant_id, ingested, skipped_duplicates, skipped_non_vessel,
+        conn.tenant_id,
+        ingested,
+        skipped_duplicates,
+        skipped_non_vessel,
     )
     return ingested
 
@@ -229,7 +237,10 @@ def _parse_gmail_message(msg: dict) -> dict:
             body_data = part.get("body", {}).get("data", "")
             if body_data:
                 import base64
-                decoded = base64.urlsafe_b64decode(body_data + "==").decode("utf-8", errors="replace")
+
+                decoded = base64.urlsafe_b64decode(body_data + "==").decode(
+                    "utf-8", errors="replace"
+                )
                 if mime_type == "text/plain" and not body_text:
                     body_text = decoded
                 elif mime_type == "text/html" and not body_html:
@@ -238,6 +249,7 @@ def _parse_gmail_message(msg: dict) -> dict:
         body_data = payload.get("body", {}).get("data", "")
         if body_data:
             import base64
+
             decoded = base64.urlsafe_b64decode(body_data + "==").decode("utf-8", errors="replace")
             if payload.get("mimeType") == "text/html":
                 body_html = decoded
@@ -273,9 +285,7 @@ async def _poll_outlook(db: AsyncSession, conn: MailConnection) -> int:
     ingested = 0
     skipped_non_vessel = 0
     vessel_terms = (
-        await get_tenant_vessel_terms(db, conn.tenant_id)
-        if settings.llm_vessel_only_sync
-        else []
+        await get_tenant_vessel_terms(db, conn.tenant_id) if settings.llm_vessel_only_sync else []
     )
     single_attempt = settings.llm_parse_single_attempt_on_ingest
 
@@ -329,7 +339,9 @@ async def _poll_outlook(db: AsyncSession, conn: MailConnection) -> int:
     await update_sync_cursor(db, conn.id, None)
     logger.info(
         "Outlook: tenant=%s ingested %d, skipped %d non-vessel-related",
-        conn.tenant_id, ingested, skipped_non_vessel,
+        conn.tenant_id,
+        ingested,
+        skipped_non_vessel,
     )
     return ingested
 
@@ -407,7 +419,9 @@ async def _poll_tenant_imap(db: AsyncSession, conn: MailConnection) -> int:
         await update_sync_cursor(db, conn.id, None)
         logger.info(
             "Tenant IMAP: tenant=%s ingested %d, skipped %d non-vessel-related",
-            conn.tenant_id, ingested, skipped_non_vessel,
+            conn.tenant_id,
+            ingested,
+            skipped_non_vessel,
         )
         return ingested
 

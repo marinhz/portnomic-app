@@ -110,10 +110,9 @@ db_query_duration_seconds = Histogram(
 # Middleware
 # ---------------------------------------------------------------------------
 
+
 class PrometheusMiddleware(BaseHTTPMiddleware):
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         if request.url.path in _SKIP_PATHS:
             return await call_next(request)
 
@@ -159,6 +158,7 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
 # ---------------------------------------------------------------------------
 # /metrics endpoint
 # ---------------------------------------------------------------------------
+
 
 async def metrics_endpoint(request: Request) -> Response:
     body = generate_latest()

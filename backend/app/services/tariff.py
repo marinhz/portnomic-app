@@ -30,9 +30,7 @@ async def list_tariffs(
     return list(result.scalars().all()), total
 
 
-async def get_tariff(
-    db: AsyncSession, tenant_id: uuid.UUID, tariff_id: uuid.UUID
-) -> Tariff | None:
+async def get_tariff(db: AsyncSession, tenant_id: uuid.UUID, tariff_id: uuid.UUID) -> Tariff | None:
     result = await db.execute(
         select(Tariff).where(Tariff.id == tariff_id, Tariff.tenant_id == tenant_id)
     )
@@ -67,13 +65,12 @@ async def get_active_tariff(
     return tariff
 
 
-async def create_tariff(
-    db: AsyncSession, tenant_id: uuid.UUID, data: TariffCreate
-) -> Tariff:
+async def create_tariff(db: AsyncSession, tenant_id: uuid.UUID, data: TariffCreate) -> Tariff:
     max_version = (
         await db.execute(
-            select(func.coalesce(func.max(Tariff.version), 0))
-            .where(Tariff.tenant_id == tenant_id, Tariff.port_id == data.port_id)
+            select(func.coalesce(func.max(Tariff.version), 0)).where(
+                Tariff.tenant_id == tenant_id, Tariff.port_id == data.port_id
+            )
         )
     ).scalar_one()
 

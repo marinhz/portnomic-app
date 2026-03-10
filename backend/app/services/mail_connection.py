@@ -253,9 +253,7 @@ def _expires_at(expires_in: int) -> str:
 # ── CRUD ──────────────────────────────────────────────────────────────────────
 
 
-async def list_connections(
-    db: AsyncSession, tenant_id: uuid.UUID
-) -> list[MailConnection]:
+async def list_connections(db: AsyncSession, tenant_id: uuid.UUID) -> list[MailConnection]:
     result = await db.execute(
         select(MailConnection)
         .where(MailConnection.tenant_id == tenant_id)
@@ -276,9 +274,7 @@ async def get_connection(
     return result.scalar_one_or_none()
 
 
-async def get_connected_for_tenant(
-    db: AsyncSession, tenant_id: uuid.UUID
-) -> list[MailConnection]:
+async def get_connected_for_tenant(db: AsyncSession, tenant_id: uuid.UUID) -> list[MailConnection]:
     result = await db.execute(
         select(MailConnection).where(
             MailConnection.tenant_id == tenant_id,
@@ -289,9 +285,7 @@ async def get_connected_for_tenant(
 
 
 async def get_all_connected(db: AsyncSession) -> list[MailConnection]:
-    result = await db.execute(
-        select(MailConnection).where(MailConnection.status == "connected")
-    )
+    result = await db.execute(select(MailConnection).where(MailConnection.status == "connected"))
     return list(result.scalars().all())
 
 
@@ -374,9 +368,7 @@ async def delete_connection(
 async def mark_connection_error(
     db: AsyncSession, connection_id: uuid.UUID, error_message: str
 ) -> None:
-    result = await db.execute(
-        select(MailConnection).where(MailConnection.id == connection_id)
-    )
+    result = await db.execute(select(MailConnection).where(MailConnection.id == connection_id))
     conn = result.scalar_one_or_none()
     if conn:
         conn.status = "error"
@@ -384,9 +376,7 @@ async def mark_connection_error(
         await db.flush()
 
 
-async def reset_sync_state_for_tenant(
-    db: AsyncSession, tenant_id: uuid.UUID
-) -> int:
+async def reset_sync_state_for_tenant(db: AsyncSession, tenant_id: uuid.UUID) -> int:
     """Clear last_sync_at and last_sync_cursor for all connected mailboxes. Returns count reset."""
     result = await db.execute(
         select(MailConnection).where(
@@ -406,9 +396,7 @@ async def reset_sync_state_for_tenant(
 async def update_sync_cursor(
     db: AsyncSession, connection_id: uuid.UUID, cursor: str | None
 ) -> None:
-    result = await db.execute(
-        select(MailConnection).where(MailConnection.id == connection_id)
-    )
+    result = await db.execute(select(MailConnection).where(MailConnection.id == connection_id))
     conn = result.scalar_one_or_none()
     if conn:
         conn.last_sync_at = datetime.now(timezone.utc)

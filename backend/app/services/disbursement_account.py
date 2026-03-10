@@ -146,9 +146,7 @@ async def mark_sent(
     db: AsyncSession,
     da_id: uuid.UUID,
 ) -> None:
-    result = await db.execute(
-        select(DisbursementAccount).where(DisbursementAccount.id == da_id)
-    )
+    result = await db.execute(select(DisbursementAccount).where(DisbursementAccount.id == da_id))
     da = result.scalar_one_or_none()
     if da and validate_transition(da.status, "sent"):
         da.status = "sent"

@@ -95,12 +95,10 @@ async def parse_emission_content(
     if len(user_content) > max_chars:
         original_len = len(user_content)
         user_content = user_content[:max_chars] + "\n\n[... truncated for token limit ...]"
-        logger.info("Emission report truncated from %d to %d chars for LLM", original_len, max_chars)
+        logger.info(
+            "Emission report truncated from %d to %d chars for LLM", original_len, max_chars
+        )
 
-    prompt_text, _ = await get_prompt(
-        ParserType.EMISSION_REPORT.value, tenant_id=tenant_id, db=db
-    )
-    raw_result = await call_llm(
-        prompt_text, user_content, tenant_id=tenant_id, db=db
-    )
+    prompt_text, _ = await get_prompt(ParserType.EMISSION_REPORT.value, tenant_id=tenant_id, db=db)
+    raw_result = await call_llm(prompt_text, user_content, tenant_id=tenant_id, db=db)
     return _validate_and_normalize(raw_result)

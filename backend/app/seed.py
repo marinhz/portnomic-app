@@ -20,19 +20,28 @@ SUPER_ADMIN_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000030")
 SUPER_ADMIN_EMAIL = "admin@portnomic.com"
 
 ADMIN_PERMISSIONS = [
-    "vessel:read", "vessel:write",
-    "port_call:read", "port_call:write",
-    "admin:users", "admin:roles",
+    "vessel:read",
+    "vessel:write",
+    "port_call:read",
+    "port_call:write",
+    "admin:users",
+    "admin:roles",
     "billing:manage",
     "settings:write",
     "ai:parse",
-    "da:read", "da:write", "da:approve", "da:send",
+    "da:read",
+    "da:write",
+    "da:approve",
+    "da:send",
 ]
 OPERATOR_PERMISSIONS = [
-    "vessel:read", "vessel:write",
-    "port_call:read", "port_call:write",
+    "vessel:read",
+    "vessel:write",
+    "port_call:read",
+    "port_call:write",
     "ai:parse",
-    "da:read", "da:write",
+    "da:read",
+    "da:write",
 ]
 
 
@@ -52,7 +61,9 @@ async def seed(db: AsyncSession) -> None:
         if existing_super.scalar_one_or_none():
             print("Seed data already exists, skipping.")
             return
-        admin_role = await db.execute(select(Role).where(Role.tenant_id == TENANT_ID, Role.name == "Admin"))
+        admin_role = await db.execute(
+            select(Role).where(Role.tenant_id == TENANT_ID, Role.name == "Admin")
+        )
         role = admin_role.scalar_one_or_none()
         if not role:
             print("Admin role not found. Run full seed first.")
@@ -111,11 +122,41 @@ async def seed(db: AsyncSession) -> None:
     db.add(super_admin_user)
 
     sample_ports = [
-        Port(tenant_id=TENANT_ID, name="Rotterdam", code="NLRTM", country="Netherlands", timezone="Europe/Amsterdam"),
-        Port(tenant_id=TENANT_ID, name="Singapore", code="SGSIN", country="Singapore", timezone="Asia/Singapore"),
-        Port(tenant_id=TENANT_ID, name="Shanghai", code="CNSHA", country="China", timezone="Asia/Shanghai"),
-        Port(tenant_id=TENANT_ID, name="Hamburg", code="DEHAM", country="Germany", timezone="Europe/Berlin"),
-        Port(tenant_id=TENANT_ID, name="Piraeus", code="GRPIR", country="Greece", timezone="Europe/Athens"),
+        Port(
+            tenant_id=TENANT_ID,
+            name="Rotterdam",
+            code="NLRTM",
+            country="Netherlands",
+            timezone="Europe/Amsterdam",
+        ),
+        Port(
+            tenant_id=TENANT_ID,
+            name="Singapore",
+            code="SGSIN",
+            country="Singapore",
+            timezone="Asia/Singapore",
+        ),
+        Port(
+            tenant_id=TENANT_ID,
+            name="Shanghai",
+            code="CNSHA",
+            country="China",
+            timezone="Asia/Shanghai",
+        ),
+        Port(
+            tenant_id=TENANT_ID,
+            name="Hamburg",
+            code="DEHAM",
+            country="Germany",
+            timezone="Europe/Berlin",
+        ),
+        Port(
+            tenant_id=TENANT_ID,
+            name="Piraeus",
+            code="GRPIR",
+            country="Greece",
+            timezone="Europe/Athens",
+        ),
     ]
     db.add_all(sample_ports)
 

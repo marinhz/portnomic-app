@@ -35,14 +35,18 @@ async def ingest_and_enqueue(
     """Store email and create a parse job. Returns (email, job) or (email, None) if duplicate or over limit."""
     existing = await get_email_by_external_id(db, tenant_id, external_id)
     if existing:
-        logger.info("Duplicate email external_id=%s for tenant=%s, skipping", external_id, tenant_id)
+        logger.info(
+            "Duplicate email external_id=%s for tenant=%s, skipping", external_id, tenant_id
+        )
         return existing, None
 
     result = await check_ai_parse_limit(db, tenant_id)
     if not result.allowed:
         logger.info(
             "AI parse limit exceeded for tenant=%s (%d/%s), skipping parse job",
-            tenant_id, result.current, result.limit,
+            tenant_id,
+            result.current,
+            result.limit,
         )
         em = Email(
             tenant_id=tenant_id,
@@ -122,7 +126,9 @@ async def poll_imap(db: AsyncSession) -> int:
     if not settings.imap_host:
         return 0
 
-    tenant_id = uuid.UUID(settings.imap_default_tenant_id) if settings.imap_default_tenant_id else None
+    tenant_id = (
+        uuid.UUID(settings.imap_default_tenant_id) if settings.imap_default_tenant_id else None
+    )
     if not tenant_id:
         logger.warning("IMAP_DEFAULT_TENANT_ID not set, skipping IMAP poll")
         return 0
@@ -141,9 +147,7 @@ async def poll_imap(db: AsyncSession) -> int:
         ingested = 0
         skipped_non_vessel = 0
         vessel_terms = (
-            await get_tenant_vessel_terms(db, tenant_id)
-            if settings.llm_vessel_only_sync
-            else []
+            await get_tenant_vessel_terms(db, tenant_id) if settings.llm_vessel_only_sync else []
         )
         single_attempt = settings.llm_parse_single_attempt_on_ingest
 
@@ -195,7 +199,8 @@ async def poll_imap(db: AsyncSession) -> int:
         mail.logout()
         logger.info(
             "IMAP poll: ingested %d, skipped %d non-vessel-related",
-            ingested, skipped_non_vessel,
+            ingested,
+            skipped_non_vessel,
         )
         return ingested
 

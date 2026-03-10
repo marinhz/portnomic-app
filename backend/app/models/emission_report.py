@@ -20,9 +20,7 @@ class EmissionReport(Base):
 
     __tablename__ = "emission_reports"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tenant_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
     )
@@ -45,12 +43,8 @@ class EmissionReport(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     schema_version: Mapped[str] = mapped_column(String(20), nullable=False, default="1.0")
-    status: Mapped[str] = mapped_column(
-        String(20), nullable=False, default=REPORT_STATUS_VERIFIED
-    )
-    anomaly_flags: Mapped[list | None] = mapped_column(
-        JSONB, nullable=True, default=None
-    )
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default=REPORT_STATUS_VERIFIED)
+    anomaly_flags: Mapped[list | None] = mapped_column(JSONB, nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -82,9 +76,7 @@ class FuelEntry(Base):
 
     __tablename__ = "fuel_entries"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     emission_report_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("emission_reports.id", ondelete="CASCADE"),
@@ -96,6 +88,4 @@ class FuelEntry(Base):
 
     emission_report = relationship("EmissionReport", back_populates="fuel_entries")
 
-    __table_args__ = (
-        Index("ix_fuel_entries_emission_report_id", "emission_report_id"),
-    )
+    __table_args__ = (Index("ix_fuel_entries_emission_report_id", "emission_report_id"),)

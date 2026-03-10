@@ -59,9 +59,7 @@ async def oauth_callback(
     base_url = app_settings.oauth_frontend_success_url
 
     if error:
-        return RedirectResponse(
-            url=f"{base_url}?error={error}", status_code=status.HTTP_302_FOUND
-        )
+        return RedirectResponse(url=f"{base_url}?error={error}", status_code=status.HTTP_302_FOUND)
 
     if not code or not state:
         return RedirectResponse(
@@ -129,9 +127,7 @@ async def list_connections(
     db: AsyncSession = Depends(get_db),
 ) -> SingleResponse[list[MailConnectionResponse]]:
     connections = await mc_svc.list_connections(db, tenant_id)
-    return SingleResponse(
-        data=[MailConnectionResponse.model_validate(c) for c in connections]
-    )
+    return SingleResponse(data=[MailConnectionResponse.model_validate(c) for c in connections])
 
 
 # ── Sync now (fetch new mail from connected mailboxes) ────────────────────────

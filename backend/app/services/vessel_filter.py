@@ -46,9 +46,7 @@ async def get_tenant_vessel_terms(
     return [(r.name, r.imo) for r in result.all()]
 
 
-def _matches_vessel_terms(
-    text: str, vessel_terms: list[tuple[str | None, str | None]]
-) -> bool:
+def _matches_vessel_terms(text: str, vessel_terms: list[tuple[str | None, str | None]]) -> bool:
     """Check if text contains any vessel name or IMO."""
     if not text:
         return False
@@ -79,9 +77,7 @@ def is_vessel_related_email(
     - If tenant has vessels: match against vessel names and IMO.
     - If no vessels or no match: use maritime keyword heuristic.
     """
-    combined = " ".join(
-        filter(None, [subject or "", body_text or "", body_html or ""])
-    )
+    combined = " ".join(filter(None, [subject or "", body_text or "", body_html or ""]))
     if not combined.strip():
         return False
 

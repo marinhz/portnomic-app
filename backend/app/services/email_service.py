@@ -27,9 +27,7 @@ async def list_emails(
     return list(result.scalars().all()), total
 
 
-async def get_email(
-    db: AsyncSession, tenant_id: uuid.UUID, email_id: uuid.UUID
-) -> Email | None:
+async def get_email(db: AsyncSession, tenant_id: uuid.UUID, email_id: uuid.UUID) -> Email | None:
     result = await db.execute(
         select(Email).where(Email.id == email_id, Email.tenant_id == tenant_id)
     )
@@ -40,16 +38,12 @@ async def get_email_by_external_id(
     db: AsyncSession, tenant_id: uuid.UUID, external_id: str
 ) -> Email | None:
     result = await db.execute(
-        select(Email).where(
-            Email.tenant_id == tenant_id, Email.external_id == external_id
-        )
+        select(Email).where(Email.tenant_id == tenant_id, Email.external_id == external_id)
     )
     return result.scalar_one_or_none()
 
 
-async def create_email(
-    db: AsyncSession, tenant_id: uuid.UUID, data: EmailCreate
-) -> Email:
+async def create_email(db: AsyncSession, tenant_id: uuid.UUID, data: EmailCreate) -> Email:
     email = Email(tenant_id=tenant_id, **data.model_dump())
     db.add(email)
     await db.flush()
@@ -57,9 +51,7 @@ async def create_email(
     return email
 
 
-async def delete_email(
-    db: AsyncSession, tenant_id: uuid.UUID, email_id: uuid.UUID
-) -> bool:
+async def delete_email(db: AsyncSession, tenant_id: uuid.UUID, email_id: uuid.UUID) -> bool:
     """Delete an email and its parse_jobs (cascade). Returns True if deleted, False if not found."""
     result = await db.execute(
         text("DELETE FROM emails WHERE id = :id AND tenant_id = :tenant_id"),

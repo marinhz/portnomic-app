@@ -7,15 +7,15 @@ Used in formula: E = C × f (E = emissions MT, C = consumption MT, f = factor).
 
 # tCO₂ per tonne of fuel (tank-to-wake, default values)
 EMISSION_FACTORS: dict[str, float] = {
-    "VLSFO": 3.114,   # Very Low Sulfur Fuel Oil (EU MRV Annex I)
-    "LSMGO": 3.151,   # Low Sulfur Marine Gas Oil (LFO)
-    "MGO": 3.151,     # Marine Gas Oil
-    "MDO": 3.151,     # Marine Diesel Oil
-    "HFO": 3.114,     # Heavy Fuel Oil
-    "LFO": 3.151,     # Light Fuel Oil
-    "LNG": 2.75,      # Liquefied Natural Gas (typical, varies by engine)
+    "VLSFO": 3.114,  # Very Low Sulfur Fuel Oil (EU MRV Annex I)
+    "LSMGO": 3.151,  # Low Sulfur Marine Gas Oil (LFO)
+    "MGO": 3.151,  # Marine Gas Oil
+    "MDO": 3.151,  # Marine Diesel Oil
+    "HFO": 3.114,  # Heavy Fuel Oil
+    "LFO": 3.151,  # Light Fuel Oil
+    "LNG": 2.75,  # Liquefied Natural Gas (typical, varies by engine)
     "biofuels": 2.0,  # Biofuels (typical blend; varies by feedstock)
-    "other": 3.114,   # Fallback to VLSFO equivalent
+    "other": 3.114,  # Fallback to VLSFO equivalent
 }
 
 DEFAULT_EMISSION_FACTOR = 3.114  # VLSFO default when fuel type unknown
@@ -24,9 +24,9 @@ DEFAULT_EMISSION_FACTOR = 3.114  # VLSFO default when fuel type unknown
 # Fraction of CO₂ that requires EU Allowances by operational status
 # Reference: EU ETS Maritime rules — 100% at EU port, 50% in EU waters
 EU_ETS_APPLICABILITY: dict[str, float] = {
-    "at_berth": 1.0,           # 100% — EU port (loading/unloading)
-    "at_sea_cruising": 0.5,    # 50% — EU waters
-    "at_anchor": 0.5,          # 50% — EU waters (simplified for MVP)
+    "at_berth": 1.0,  # 100% — EU port (loading/unloading)
+    "at_sea_cruising": 0.5,  # 50% — EU waters
+    "at_anchor": 0.5,  # 50% — EU waters (simplified for MVP)
 }
 DEFAULT_EU_ETS_FACTOR = 0.5  # Fallback when operational status unknown
 

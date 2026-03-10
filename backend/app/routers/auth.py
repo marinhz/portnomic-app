@@ -59,13 +59,13 @@ async def login(
         ).inc()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"error": {"code": "INVALID_CREDENTIALS", "message": "Invalid email or password"}},
+            detail={
+                "error": {"code": "INVALID_CREDENTIALS", "message": "Invalid email or password"}
+            },
         )
 
     if user.mfa_enabled:
-        auth_login_attempts_total.labels(
-            status="mfa_required", tenant_id=str(user.tenant_id)
-        ).inc()
+        auth_login_attempts_total.labels(status="mfa_required", tenant_id=str(user.tenant_id)).inc()
         mfa_token = auth_svc.create_mfa_token(user)
         return LoginResponse(
             access_token="",
@@ -84,9 +84,7 @@ async def login(
     user.last_login_at = datetime.now(timezone.utc)
     await db.flush()
 
-    auth_login_attempts_total.labels(
-        status="success", tenant_id=str(user.tenant_id)
-    ).inc()
+    auth_login_attempts_total.labels(status="success", tenant_id=str(user.tenant_id)).inc()
 
     await audit_svc.log_action(
         db,
@@ -122,13 +120,13 @@ async def verify_mfa(
     if not payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"error": {"code": "INVALID_MFA_TOKEN", "message": "Invalid or expired MFA token"}},
+            detail={
+                "error": {"code": "INVALID_MFA_TOKEN", "message": "Invalid or expired MFA token"}
+            },
         )
 
     user_id = uuid.UUID(payload["sub"])
-    result = await db.execute(
-        select(User).where(User.id == user_id, User.is_active.is_(True))
-    )
+    result = await db.execute(select(User).where(User.id == user_id, User.is_active.is_(True)))
     user = result.scalar_one_or_none()
     if user is None:
         raise HTTPException(
@@ -139,7 +137,9 @@ async def verify_mfa(
     is_valid = await auth_svc.verify_totp(user, body.code, db)
     if not is_valid:
         auth_login_failures_total.labels(
-            reason="invalid_mfa", tenant_id=str(user.tenant_id), user_email_hash=_email_hash(user.email)
+            reason="invalid_mfa",
+            tenant_id=str(user.tenant_id),
+            user_email_hash=_email_hash(user.email),
         ).inc()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -155,9 +155,7 @@ async def verify_mfa(
     user.last_login_at = datetime.now(timezone.utc)
     await db.flush()
 
-    auth_login_attempts_total.labels(
-        status="success", tenant_id=str(user.tenant_id)
-    ).inc()
+    auth_login_attempts_total.labels(status="success", tenant_id=str(user.tenant_id)).inc()
 
     await audit_svc.log_action(
         db,
@@ -193,7 +191,12 @@ async def refresh(
     if not payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"error": {"code": "INVALID_REFRESH_TOKEN", "message": "Invalid or expired refresh token"}},
+            detail={
+                "error": {
+                    "code": "INVALID_REFRESH_TOKEN",
+                    "message": "Invalid or expired refresh token",
+                }
+            },
         )
 
     jti = payload.get("jti")
@@ -206,9 +209,7 @@ async def refresh(
         await auth_svc.mark_refresh_token_used(jti)
 
     user_id = uuid.UUID(payload["sub"])
-    result = await db.execute(
-        select(User).where(User.id == user_id, User.is_active.is_(True))
-    )
+    result = await db.execute(select(User).where(User.id == user_id, User.is_active.is_(True)))
     user = result.scalar_one_or_none()
     if user is None:
         raise HTTPException(

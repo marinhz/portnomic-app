@@ -22,9 +22,7 @@ async def get_current_user(
 ) -> CurrentUser:
     token = credentials.credentials
     try:
-        payload = jwt.decode(
-            token, settings.jwt_secret, algorithms=[settings.jwt_algorithm]
-        )
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
         if payload.get("type") != "access":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -57,9 +55,7 @@ async def get_current_user(
     permissions = role.permissions if role else []
 
     admin_emails = [
-        e.strip().lower()
-        for e in settings.platform_admin_emails.split(",")
-        if e.strip()
+        e.strip().lower() for e in settings.platform_admin_emails.split(",") if e.strip()
     ]
     is_platform_admin = user.email.lower() in admin_emails
 

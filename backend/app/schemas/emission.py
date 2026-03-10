@@ -10,9 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 EXTRACTION_SCHEMA_VERSION = "1.0"
 
-FUEL_TYPES = frozenset(
-    {"VLSFO", "LSMGO", "MGO", "HFO", "LNG", "biofuels", "LFO", "MDO", "other"}
-)
+FUEL_TYPES = frozenset({"VLSFO", "LSMGO", "MGO", "HFO", "LNG", "biofuels", "LFO", "MDO", "other"})
 OPERATIONAL_STATUSES = frozenset({"at_sea_cruising", "at_berth", "at_anchor"})
 
 

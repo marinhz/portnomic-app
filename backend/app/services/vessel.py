@@ -28,18 +28,14 @@ async def list_vessels(
     return list(result.scalars().all()), total
 
 
-async def get_vessel(
-    db: AsyncSession, tenant_id: uuid.UUID, vessel_id: uuid.UUID
-) -> Vessel | None:
+async def get_vessel(db: AsyncSession, tenant_id: uuid.UUID, vessel_id: uuid.UUID) -> Vessel | None:
     result = await db.execute(
         select(Vessel).where(Vessel.id == vessel_id, Vessel.tenant_id == tenant_id)
     )
     return result.scalar_one_or_none()
 
 
-async def create_vessel(
-    db: AsyncSession, tenant_id: uuid.UUID, data: VesselCreate
-) -> Vessel:
+async def create_vessel(db: AsyncSession, tenant_id: uuid.UUID, data: VesselCreate) -> Vessel:
     result = await check_vessel_limit(db, tenant_id)
     raise_if_over_limit(result, "vessels")
 

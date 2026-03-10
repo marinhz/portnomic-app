@@ -55,12 +55,14 @@ async def send_da_email(
         da_id_short=da_id[:8] if da_id else "N/A",
         status=da_data.get("status", "approved").replace("_", " ").title(),
         currency=currency,
-        total=f'{totals.get("total", 0):,.2f}',
+        total=f"{totals.get('total', 0):,.2f}",
         from_name=settings.smtp_from_name,
     )
 
     msg = EmailMessage()
-    msg["Subject"] = f"Disbursement Account — {da_data.get('type', 'proforma').title()} (v{da_data.get('version', 1)})"
+    msg["Subject"] = (
+        f"Disbursement Account — {da_data.get('type', 'proforma').title()} (v{da_data.get('version', 1)})"
+    )
     msg["From"] = f"{settings.smtp_from_name} <{settings.smtp_from_address}>"
     msg["To"] = ", ".join(to_addresses)
     msg.set_content(body)
@@ -96,9 +98,7 @@ async def send_da_email(
         logger.info("Email sent for DA %s to %s", da_id[:8], to_addresses)
         return result
     except CircuitBreakerOpen:
-        logger.error(
-            "SMTP circuit breaker open; skipping email for DA %s", da_id[:8]
-        )
+        logger.error("SMTP circuit breaker open; skipping email for DA %s", da_id[:8])
         return False
     except Exception:
         logger.exception("Failed to send email for DA %s", da_id[:8])

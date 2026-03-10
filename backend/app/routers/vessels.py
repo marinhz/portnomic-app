@@ -37,7 +37,10 @@ async def list_vessels(
     "",
     response_model=SingleResponse[VesselResponse],
     status_code=status.HTTP_201_CREATED,
-    responses={400: {"model": ErrorResponse}, 403: {"description": "Plan limit exceeded (upgrade_required)"}},
+    responses={
+        400: {"model": ErrorResponse},
+        403: {"description": "Plan limit exceeded (upgrade_required)"},
+    },
 )
 async def create_vessel(
     body: VesselCreate,

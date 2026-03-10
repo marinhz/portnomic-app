@@ -11,9 +11,7 @@ from app.models.base import Base
 class Email(Base):
     __tablename__ = "emails"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tenant_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
     )
@@ -27,12 +25,8 @@ class Email(Base):
     sender: Mapped[str | None] = mapped_column(String(320), nullable=True)
     body_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     body_html: Mapped[str | None] = mapped_column(Text, nullable=True)
-    received_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    processing_status: Mapped[str] = mapped_column(
-        String(50), nullable=False, default="pending"
-    )
+    received_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    processing_status: Mapped[str] = mapped_column(String(50), nullable=False, default="pending")
     ai_raw_output: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     error_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     prompt_version: Mapped[str | None] = mapped_column(String(50), nullable=True)

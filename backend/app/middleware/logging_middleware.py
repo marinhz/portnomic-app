@@ -39,6 +39,7 @@ def get_request_context() -> RequestContext:
 # JWT helpers (decode without verification — logging only)
 # ---------------------------------------------------------------------------
 
+
 def _pad_b64(data: str) -> str:
     missing = len(data) % 4
     if missing:
@@ -60,14 +61,13 @@ def _extract_jwt_claims(token: str) -> dict[str, Any]:
 
 
 def _safe_headers(headers: dict[str, str]) -> dict[str, str]:
-    return {
-        k: v for k, v in headers.items() if k.lower() not in _SENSITIVE_HEADERS
-    }
+    return {k: v for k, v in headers.items() if k.lower() not in _SENSITIVE_HEADERS}
 
 
 # ---------------------------------------------------------------------------
 # JSON log formatter
 # ---------------------------------------------------------------------------
+
 
 class JSONFormatter(logging.Formatter):
     """Emits each log record as a single JSON line enriched with request context."""
@@ -100,6 +100,7 @@ class JSONFormatter(logging.Formatter):
 # Logging setup
 # ---------------------------------------------------------------------------
 
+
 def setup_logging(level: str = "INFO") -> None:
     """Replace root logger handlers with a single structured JSON handler."""
     root = logging.getLogger()
@@ -120,10 +121,9 @@ def setup_logging(level: str = "INFO") -> None:
 # Middleware
 # ---------------------------------------------------------------------------
 
+
 class RequestContextMiddleware(BaseHTTPMiddleware):
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
         correlation_id = request.headers.get("x-correlation-id") or str(uuid.uuid4())
 

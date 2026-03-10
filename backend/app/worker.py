@@ -52,10 +52,14 @@ async def process_parse_job(ctx: dict, job_payload: str) -> None:
                 await db.rollback()
                 if is_transient_error(exc) and attempt < max_retries:
                     attempt += 1
-                    wait = 2 ** attempt
+                    wait = 2**attempt
                     logger.warning(
                         "Transient error on email %s (attempt %d/%d), retrying in %ds: %s",
-                        email_id, attempt, max_retries, wait, exc,
+                        email_id,
+                        attempt,
+                        max_retries,
+                        wait,
+                        exc,
                     )
                     await asyncio.sleep(wait)
                     continue

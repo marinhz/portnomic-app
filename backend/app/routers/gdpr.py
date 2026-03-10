@@ -44,7 +44,9 @@ async def export_own_data(
     if body.format not in _EXPORT_FORMAT_VALUES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"error": {"code": "INVALID_FORMAT", "message": "Format must be 'json' or 'csv'"}},
+            detail={
+                "error": {"code": "INVALID_FORMAT", "message": "Format must be 'json' or 'csv'"}
+            },
         )
 
     export_data = await gdpr_svc.export_user_data(db, tenant_id, current_user.id, body.format)
@@ -94,7 +96,9 @@ async def export_user_data(
     if body.format not in _EXPORT_FORMAT_VALUES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"error": {"code": "INVALID_FORMAT", "message": "Format must be 'json' or 'csv'"}},
+            detail={
+                "error": {"code": "INVALID_FORMAT", "message": "Format must be 'json' or 'csv'"}
+            },
         )
 
     export_data = await gdpr_svc.export_user_data(db, tenant_id, user_id, body.format)
@@ -146,7 +150,12 @@ async def request_erasure(
     if not body.confirm:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"error": {"code": "CONFIRMATION_REQUIRED", "message": "Set confirm=true to proceed with erasure"}},
+            detail={
+                "error": {
+                    "code": "CONFIRMATION_REQUIRED",
+                    "message": "Set confirm=true to proceed with erasure",
+                }
+            },
         )
 
     result = await gdpr_svc.erase_user(db, tenant_id, body.user_id, current_user.id)

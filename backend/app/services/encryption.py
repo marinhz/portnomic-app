@@ -25,7 +25,7 @@ def _get_fernet() -> Fernet:
     if not raw or not raw.strip():
         raise ValueError(
             "LLM_KEY_ENCRYPTION_KEY is required for tenant API key encryption; "
-            "generate with: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+            'generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"'
         )
     raw = raw.strip()
     try:

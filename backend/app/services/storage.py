@@ -50,7 +50,9 @@ async def _store_local(blob_id: str, data: bytes) -> str:
 async def _get_local(blob_id: str) -> bytes | None:
     base = Path(settings.storage_local_path).resolve()
     file_path = (base / blob_id).resolve()
-    if not str(file_path).startswith(str(base) + "/") and not str(file_path).startswith(str(base) + "\\"):
+    if not str(file_path).startswith(str(base) + "/") and not str(file_path).startswith(
+        str(base) + "\\"
+    ):
         raise ValueError("Invalid blob_id: path escapes storage directory")
     if not file_path.exists():
         return None

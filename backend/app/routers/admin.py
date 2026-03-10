@@ -47,7 +47,10 @@ async def list_users(
     "/users",
     response_model=SingleResponse[UserResponse],
     status_code=status.HTTP_201_CREATED,
-    responses={400: {"model": ErrorResponse}, 403: {"description": "Plan limit exceeded (upgrade_required)"}},
+    responses={
+        400: {"model": ErrorResponse},
+        403: {"description": "Plan limit exceeded (upgrade_required)"},
+    },
 )
 async def create_user(
     body: UserCreate,
@@ -197,7 +200,9 @@ async def update_role(
     role_id: uuid.UUID,
     body: RoleUpdate,
     request: Request,
-    current_user: CurrentUser = Depends(RequirePermission("admin:roles", allow_platform_admin=True)),
+    current_user: CurrentUser = Depends(
+        RequirePermission("admin:roles", allow_platform_admin=True)
+    ),
     tenant_id: uuid.UUID = Depends(get_tenant_id),
     db: AsyncSession = Depends(get_db),
 ) -> SingleResponse[RoleResponse]:

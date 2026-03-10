@@ -29,14 +29,62 @@ from app.services.mail_connection import encrypt_credentials
 
 # Realistic vessel data for maritime marketing
 VESSELS = [
-    {"name": "MSC Gulsun", "imo": "9855811", "mmsi": "353136000", "vessel_type": "Container Ship", "flag": "Panama"},
-    {"name": "Ever Given", "imo": "9811000", "mmsi": "353136000", "vessel_type": "Container Ship", "flag": "Panama"},
-    {"name": "HMM Oslo", "imo": "9864918", "mmsi": "440123000", "vessel_type": "Container Ship", "flag": "Liberia"},
-    {"name": "CMA CGM Antoine de Saint Exupery", "imo": "9778235", "mmsi": "229256000", "vessel_type": "Container Ship", "flag": "Malta"},
-    {"name": "Pacific Voyager", "imo": "9123456", "mmsi": "538009123", "vessel_type": "Bulk Carrier", "flag": "Marshall Islands"},
-    {"name": "Nordic Spirit", "imo": "9234567", "mmsi": "257123000", "vessel_type": "Ro-Ro Cargo", "flag": "Norway"},
-    {"name": "Atlantic Star", "imo": "9345678", "mmsi": "311000123", "vessel_type": "General Cargo", "flag": "Bahamas"},
-    {"name": "Blue Horizon", "imo": "9456789", "mmsi": "636015432", "vessel_type": "Chemical Tanker", "flag": "Liberia"},
+    {
+        "name": "MSC Gulsun",
+        "imo": "9855811",
+        "mmsi": "353136000",
+        "vessel_type": "Container Ship",
+        "flag": "Panama",
+    },
+    {
+        "name": "Ever Given",
+        "imo": "9811000",
+        "mmsi": "353136000",
+        "vessel_type": "Container Ship",
+        "flag": "Panama",
+    },
+    {
+        "name": "HMM Oslo",
+        "imo": "9864918",
+        "mmsi": "440123000",
+        "vessel_type": "Container Ship",
+        "flag": "Liberia",
+    },
+    {
+        "name": "CMA CGM Antoine de Saint Exupery",
+        "imo": "9778235",
+        "mmsi": "229256000",
+        "vessel_type": "Container Ship",
+        "flag": "Malta",
+    },
+    {
+        "name": "Pacific Voyager",
+        "imo": "9123456",
+        "mmsi": "538009123",
+        "vessel_type": "Bulk Carrier",
+        "flag": "Marshall Islands",
+    },
+    {
+        "name": "Nordic Spirit",
+        "imo": "9234567",
+        "mmsi": "257123000",
+        "vessel_type": "Ro-Ro Cargo",
+        "flag": "Norway",
+    },
+    {
+        "name": "Atlantic Star",
+        "imo": "9345678",
+        "mmsi": "311000123",
+        "vessel_type": "General Cargo",
+        "flag": "Bahamas",
+    },
+    {
+        "name": "Blue Horizon",
+        "imo": "9456789",
+        "mmsi": "636015432",
+        "vessel_type": "Chemical Tanker",
+        "flag": "Liberia",
+    },
 ]
 
 # Tariff formula items (typical port charges)
@@ -49,11 +97,41 @@ TARIFF_ITEMS = [
 ]
 
 DA_LINE_ITEMS_SAMPLE = [
-    {"description": "Pilotage", "quantity": 1.0, "unit_price": 1850.0, "amount": 1850.0, "currency": "USD"},
-    {"description": "Port dues (per GRT)", "quantity": 12500.0, "unit_price": 0.85, "amount": 10625.0, "currency": "USD"},
-    {"description": "Berth hire", "quantity": 18.5, "unit_price": 125.0, "amount": 2312.5, "currency": "USD"},
-    {"description": "Mooring/unmooring", "quantity": 1.0, "unit_price": 420.0, "amount": 420.0, "currency": "USD"},
-    {"description": "Agency fee", "quantity": 1.0, "unit_price": 750.0, "amount": 750.0, "currency": "USD"},
+    {
+        "description": "Pilotage",
+        "quantity": 1.0,
+        "unit_price": 1850.0,
+        "amount": 1850.0,
+        "currency": "USD",
+    },
+    {
+        "description": "Port dues (per GRT)",
+        "quantity": 12500.0,
+        "unit_price": 0.85,
+        "amount": 10625.0,
+        "currency": "USD",
+    },
+    {
+        "description": "Berth hire",
+        "quantity": 18.5,
+        "unit_price": 125.0,
+        "amount": 2312.5,
+        "currency": "USD",
+    },
+    {
+        "description": "Mooring/unmooring",
+        "quantity": 1.0,
+        "unit_price": 420.0,
+        "amount": 420.0,
+        "currency": "USD",
+    },
+    {
+        "description": "Agency fee",
+        "quantity": 1.0,
+        "unit_price": 750.0,
+        "amount": 750.0,
+        "currency": "USD",
+    },
 ]
 
 
@@ -163,9 +241,7 @@ async def seed_marketing(db: AsyncSession) -> None:
 
     # Create disbursement accounts (proforma and final, various statuses)
     da_statuses = ["draft", "pending_approval", "approved", "sent"]
-    admin_result = await db.execute(
-        select(User).where(User.tenant_id == tenant_id).limit(1)
-    )
+    admin_result = await db.execute(select(User).where(User.tenant_id == tenant_id).limit(1))
     admin_user = admin_result.scalar_one_or_none()
     admin_id = admin_user.id if admin_user else None
 
@@ -239,7 +315,9 @@ async def seed_marketing(db: AsyncSession) -> None:
     existing_conns = list(conn_result.scalars().all())
     if not existing_conns:
         # Placeholder credentials for display only (sync would fail)
-        placeholder_creds = encrypt_credentials({"email": "ops@agency.com", "access_token": "x", "refresh_token": "y"})
+        placeholder_creds = encrypt_credentials(
+            {"email": "ops@agency.com", "access_token": "x", "refresh_token": "y"}
+        )
         integrations = [
             MailConnection(
                 tenant_id=tenant_id,
@@ -286,32 +364,32 @@ async def seed_marketing(db: AsyncSession) -> None:
 
     # Create sample emails - for Inbox / email list screenshots
     email_samples = [
-            {
-                "subject": "Port Call Notification - MSC Gulsun ETA Rotterdam 12-Mar",
-                "sender": "port.ops@rotterdam.nl",
-                "body": "Dear Agent,\n\nPlease find below the confirmed ETA for MSC Gulsun (IMO 9855811).\n\nETA: 12-Mar-2025 06:00 UTC\nBerth: CT-4\n\nBest regards,\nPort Operations",
-            },
-            {
-                "subject": "Noon Report - Pacific Voyager - 08-Mar-2025",
-                "sender": "master@pacific-voyager.com",
-                "body": "Noon Report 08-Mar-2025\nPosition: 51.2N 003.5E\nDistance: 245 nm\nFuel consumed: 12.4 mt VLSFO\nETA Rotterdam: 10-Mar 14:00",
-            },
-            {
-                "subject": "Disbursement Account Proforma - Ever Given - Shanghai",
-                "sender": "accounts@shanghaiport.com",
-                "body": "Please find attached proforma DA for port call Shanghai.\nTotal: USD 18,450.00\nValid until 15-Mar-2025.",
-            },
-            {
-                "subject": "Bunker Delivery Note - Nordic Spirit - Singapore",
-                "sender": "bunkers@singapore-fuel.com",
-                "body": "BDN attached for Nordic Spirit.\nVLSFO: 85.2 mt\nMDO: 2.1 mt\nDelivery: 05-Mar-2025 08:00",
-            },
-            {
-                "subject": "Port Call Update - HMM Oslo - Hamburg ETD revised",
-                "sender": "hamburg.port@hpa.hamburg.de",
-                "body": "ETD revised to 11-Mar-2025 18:00 due to cargo operations delay.",
-            },
-        ]
+        {
+            "subject": "Port Call Notification - MSC Gulsun ETA Rotterdam 12-Mar",
+            "sender": "port.ops@rotterdam.nl",
+            "body": "Dear Agent,\n\nPlease find below the confirmed ETA for MSC Gulsun (IMO 9855811).\n\nETA: 12-Mar-2025 06:00 UTC\nBerth: CT-4\n\nBest regards,\nPort Operations",
+        },
+        {
+            "subject": "Noon Report - Pacific Voyager - 08-Mar-2025",
+            "sender": "master@pacific-voyager.com",
+            "body": "Noon Report 08-Mar-2025\nPosition: 51.2N 003.5E\nDistance: 245 nm\nFuel consumed: 12.4 mt VLSFO\nETA Rotterdam: 10-Mar 14:00",
+        },
+        {
+            "subject": "Disbursement Account Proforma - Ever Given - Shanghai",
+            "sender": "accounts@shanghaiport.com",
+            "body": "Please find attached proforma DA for port call Shanghai.\nTotal: USD 18,450.00\nValid until 15-Mar-2025.",
+        },
+        {
+            "subject": "Bunker Delivery Note - Nordic Spirit - Singapore",
+            "sender": "bunkers@singapore-fuel.com",
+            "body": "BDN attached for Nordic Spirit.\nVLSFO: 85.2 mt\nMDO: 2.1 mt\nDelivery: 05-Mar-2025 08:00",
+        },
+        {
+            "subject": "Port Call Update - HMM Oslo - Hamburg ETD revised",
+            "sender": "hamburg.port@hpa.hamburg.de",
+            "body": "ETD revised to 11-Mar-2025 18:00 due to cargo operations delay.",
+        },
+    ]
     for i, sample in enumerate(email_samples):
         pc = port_calls[i % len(port_calls)]
         external_id = f"marketing-email-{i + 1:03d}"

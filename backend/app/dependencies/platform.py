@@ -9,9 +9,7 @@ async def get_platform_admin(
     current_user: CurrentUser = Depends(get_current_user),
 ) -> CurrentUser:
     admin_emails = [
-        e.strip().lower()
-        for e in settings.platform_admin_emails.split(",")
-        if e.strip()
+        e.strip().lower() for e in settings.platform_admin_emails.split(",") if e.strip()
     ]
     if current_user.email.lower() not in admin_emails:
         raise HTTPException(

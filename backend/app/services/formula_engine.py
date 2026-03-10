@@ -77,23 +77,27 @@ def compute_line_items(
             qty = 1.0
             amount = rate
 
-        items.append({
-            "description": desc,
-            "quantity": qty,
-            "unit_price": rate,
-            "amount": round(amount, 2),
-            "currency": currency,
-        })
+        items.append(
+            {
+                "description": desc,
+                "quantity": qty,
+                "unit_price": rate,
+                "amount": round(amount, 2),
+                "currency": currency,
+            }
+        )
 
     if parsed_line_items:
         for pli in parsed_line_items:
-            items.append({
-                "description": pli.get("description", "Parsed item"),
-                "quantity": pli.get("quantity", 1) or 1,
-                "unit_price": pli.get("unit_price", pli.get("amount", 0)) or 0,
-                "amount": round(float(pli.get("amount", 0)), 2),
-                "currency": pli.get("currency", default_currency),
-            })
+            items.append(
+                {
+                    "description": pli.get("description", "Parsed item"),
+                    "quantity": pli.get("quantity", 1) or 1,
+                    "unit_price": pli.get("unit_price", pli.get("amount", 0)) or 0,
+                    "amount": round(float(pli.get("amount", 0)), 2),
+                    "currency": pli.get("currency", default_currency),
+                }
+            )
 
     subtotal = round(sum(item["amount"] for item in items), 2)
     tax = round(subtotal * tax_rate, 2)

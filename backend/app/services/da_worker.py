@@ -51,7 +51,9 @@ async def process_da_send(
             if to_addresses:
                 sent = await send_da_email(to_addresses, da_data, pdf_bytes)
                 if not sent:
-                    logger.warning("Email dispatch failed for DA %s; PDF saved but not emailed", da_id)
+                    logger.warning(
+                        "Email dispatch failed for DA %s; PDF saved but not emailed", da_id
+                    )
 
             await mark_sent(db, da_id)
             await db.commit()

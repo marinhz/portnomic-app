@@ -20,12 +20,8 @@ def _get_fernet() -> Fernet:
     return Fernet(settings.mfa_encryption_key.encode())
 
 
-async def authenticate_user(
-    db: AsyncSession, email: str, password: str
-) -> User | None:
-    result = await db.execute(
-        select(User).where(User.email == email, User.is_active.is_(True))
-    )
+async def authenticate_user(db: AsyncSession, email: str, password: str) -> User | None:
+    result = await db.execute(select(User).where(User.email == email, User.is_active.is_(True)))
     user = result.scalar_one_or_none()
     if user is None:
         pwd_context.hash("dummy")
@@ -64,9 +60,7 @@ def create_refresh_token(user: User, jti: str | None = None) -> str:
 
 def verify_refresh_token(token: str) -> dict:
     try:
-        payload = jwt.decode(
-            token, settings.jwt_secret, algorithms=[settings.jwt_algorithm]
-        )
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
         if payload.get("type") != "refresh":
             return {}
         return payload
@@ -104,9 +98,7 @@ def create_mfa_token(user: User) -> str:
 
 def verify_mfa_token(token: str) -> dict:
     try:
-        payload = jwt.decode(
-            token, settings.jwt_secret, algorithms=[settings.jwt_algorithm]
-        )
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
         if payload.get("type") != "mfa":
             return {}
         return payload

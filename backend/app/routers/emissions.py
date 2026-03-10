@@ -74,7 +74,13 @@ async def get_emissions_summary(
 ) -> SingleResponse[EmissionsSummaryResponse]:
     """Aggregated carbon debt and compliance counts for dashboard."""
     reports, total = await emission_report_svc.list_emission_reports(
-        db, tenant_id, page=1, per_page=10000, vessel_id=vessel_id, date_from=date_from, date_to=date_to
+        db,
+        tenant_id,
+        page=1,
+        per_page=10000,
+        vessel_id=vessel_id,
+        date_from=date_from,
+        date_to=date_to,
     )
     carbon_price = await get_current_price_eur()
     total_co2 = 0.0
@@ -113,8 +119,14 @@ async def list_emission_reports(
 ) -> PaginatedResponse[EmissionReportListResponse]:
     """List emission reports with optional filters."""
     reports, total = await emission_report_svc.list_emission_reports(
-        db, tenant_id, page, per_page, vessel_id=vessel_id,
-        verification_status=verification_status, date_from=date_from, date_to=date_to
+        db,
+        tenant_id,
+        page,
+        per_page,
+        vessel_id=vessel_id,
+        verification_status=verification_status,
+        date_from=date_from,
+        date_to=date_to,
     )
     carbon_price = await get_current_price_eur()
     items: list[EmissionReportListResponse] = []
@@ -275,10 +287,12 @@ async def get_emission_report(
     if report.anomaly_flags:
         for f in report.anomaly_flags:
             if isinstance(f, dict):
-                anomaly_flags.append({
-                    "code": f.get("rule", f.get("code", "unknown")),
-                    "message": f.get("description", f.get("message", str(f))),
-                })
+                anomaly_flags.append(
+                    {
+                        "code": f.get("rule", f.get("code", "unknown")),
+                        "message": f.get("description", f.get("message", str(f))),
+                    }
+                )
     vessel = report.vessel
     return SingleResponse(
         data=EmissionReportDetailResponse(
@@ -312,7 +326,9 @@ async def get_emission_report(
 async def export_emission_report(
     report_id: uuid.UUID,
     format: str = Query(..., alias="format", description="Export format: json, xml, or pdf"),
-    voyage_id: uuid.UUID | None = Query(None, description="Optional voyage/port_call for aggregation"),
+    voyage_id: uuid.UUID | None = Query(
+        None, description="Optional voyage/port_call for aggregation"
+    ),
     current_user: CurrentUser = Depends(RequirePermission("ai:parse")),
     tenant_id: uuid.UUID = Depends(get_tenant_id),
     db: AsyncSession = Depends(get_db),

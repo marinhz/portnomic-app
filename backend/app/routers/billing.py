@@ -41,7 +41,9 @@ class CreatePortalSessionRequest(BaseModel):
 
 @router.get("/status")
 async def get_billing_status(
-    current_user: CurrentUser = Depends(RequirePermission("billing:manage", allow_platform_admin=True)),
+    current_user: CurrentUser = Depends(
+        RequirePermission("billing:manage", allow_platform_admin=True)
+    ),
     tenant_id: uuid.UUID = Depends(get_tenant_id),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
@@ -52,7 +54,9 @@ async def get_billing_status(
 @router.post("/create-checkout-session")
 async def create_checkout_session(
     body: CreateCheckoutSessionRequest,
-    current_user: CurrentUser = Depends(RequirePermission("billing:manage", allow_platform_admin=True)),
+    current_user: CurrentUser = Depends(
+        RequirePermission("billing:manage", allow_platform_admin=True)
+    ),
     tenant_id: uuid.UUID = Depends(get_tenant_id),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -63,7 +67,9 @@ async def create_checkout_session(
     if body.plan not in ("starter", "professional"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"error": {"code": "INVALID_PLAN", "message": "Plan must be starter or professional"}},
+            detail={
+                "error": {"code": "INVALID_PLAN", "message": "Plan must be starter or professional"}
+            },
         )
 
     try:
@@ -86,7 +92,9 @@ async def create_checkout_session(
 @router.post("/portal")
 async def create_portal_session(
     body: CreatePortalSessionRequest,
-    current_user: CurrentUser = Depends(RequirePermission("billing:manage", allow_platform_admin=True)),
+    current_user: CurrentUser = Depends(
+        RequirePermission("billing:manage", allow_platform_admin=True)
+    ),
     tenant_id: uuid.UUID = Depends(get_tenant_id),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -117,18 +125,24 @@ async def mypos_webhook(
     """
     if not settings.mypos_public_cert:
         logger.warning("myPOS public cert not configured")
-        return PlainTextResponse(content="NOT_CONFIGURED", status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+        return PlainTextResponse(
+            content="NOT_CONFIGURED", status_code=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
 
     form = await request.form()
     data = dict(form)
 
     if not billing_svc.verify_mypos_notify(data, settings.mypos_public_cert):
         logger.warning("myPOS notify signature verification failed")
-        return PlainTextResponse(content="INVALID_SIGNATURE", status_code=status.HTTP_400_BAD_REQUEST)
+        return PlainTextResponse(
+            content="INVALID_SIGNATURE", status_code=status.HTTP_400_BAD_REQUEST
+        )
 
     order_id = data.get("OrderID")
     if not order_id:
-        return PlainTextResponse(content="MISSING_ORDER_ID", status_code=status.HTTP_400_BAD_REQUEST)
+        return PlainTextResponse(
+            content="MISSING_ORDER_ID", status_code=status.HTTP_400_BAD_REQUEST
+        )
 
     if await billing_svc.is_event_processed(order_id):
         return PlainTextResponse(content="OK")
@@ -138,6 +152,8 @@ async def mypos_webhook(
         await billing_svc.mark_event_processed(order_id)
     except Exception:
         logger.exception("Error processing myPOS notify for OrderID %s", order_id)
-        return PlainTextResponse(content="PROCESSING_ERROR", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return PlainTextResponse(
+            content="PROCESSING_ERROR", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
     return PlainTextResponse(content="OK")

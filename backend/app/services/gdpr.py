@@ -84,14 +84,10 @@ async def export_user_data(
 
     profile = _serialize_row(user, exclude={"password_hash", "mfa_secret"})
 
-    vessels_result = await db.execute(
-        select(Vessel).where(Vessel.tenant_id == tenant_id)
-    )
+    vessels_result = await db.execute(select(Vessel).where(Vessel.tenant_id == tenant_id))
     vessels = [_serialize_row(v) for v in vessels_result.scalars().all()]
 
-    port_calls_result = await db.execute(
-        select(PortCall).where(PortCall.tenant_id == tenant_id)
-    )
+    port_calls_result = await db.execute(select(PortCall).where(PortCall.tenant_id == tenant_id))
     port_calls = [_serialize_row(pc) for pc in port_calls_result.scalars().all()]
 
     das_result = await db.execute(
@@ -99,9 +95,7 @@ async def export_user_data(
     )
     disbursement_accounts = [_serialize_row(da) for da in das_result.scalars().all()]
 
-    emails_result = await db.execute(
-        select(Email).where(Email.tenant_id == tenant_id)
-    )
+    emails_result = await db.execute(select(Email).where(Email.tenant_id == tenant_id))
     emails = [_serialize_row(e) for e in emails_result.scalars().all()]
 
     export = {
@@ -187,9 +181,7 @@ async def get_retention_policy(
     db: AsyncSession,
     tenant_id: uuid.UUID,
 ) -> dict:
-    result = await db.execute(
-        select(Tenant).where(Tenant.id == tenant_id)
-    )
+    result = await db.execute(select(Tenant).where(Tenant.id == tenant_id))
     tenant = result.scalar_one_or_none()
     if tenant is None:
         return {"error": "tenant_not_found"}
@@ -210,9 +202,7 @@ async def update_retention_policy(
     tenant_id: uuid.UUID,
     config: dict,
 ) -> dict:
-    result = await db.execute(
-        select(Tenant).where(Tenant.id == tenant_id)
-    )
+    result = await db.execute(select(Tenant).where(Tenant.id == tenant_id))
     tenant = result.scalar_one_or_none()
     if tenant is None:
         return {"error": "tenant_not_found"}

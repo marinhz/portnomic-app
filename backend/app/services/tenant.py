@@ -14,13 +14,19 @@ SLUG_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*[a-z0-9]$")
 RESERVED_SLUGS = frozenset({"admin", "platform", "api", "system", "root", "shipflow"})
 
 DEFAULT_ADMIN_PERMISSIONS = [
-    "vessel:read", "vessel:write",
-    "port_call:read", "port_call:write",
-    "admin:users", "admin:roles",
+    "vessel:read",
+    "vessel:write",
+    "port_call:read",
+    "port_call:write",
+    "admin:users",
+    "admin:roles",
     "billing:manage",
     "settings:write",
     "ai:parse",
-    "da:read", "da:write", "da:approve", "da:send",
+    "da:read",
+    "da:write",
+    "da:approve",
+    "da:send",
 ]
 DEFAULT_VIEWER_PERMISSIONS = [
     "vessel:read",
