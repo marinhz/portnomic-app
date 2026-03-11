@@ -55,6 +55,7 @@ class CurrentUser(BaseModel):
     permissions: list[str]
     mfa_enabled: bool = False
     is_platform_admin: bool = False
+    tenant_plan: str | None = None  # "starter" | "professional" | "enterprise"
     created_at: datetime | None = None
     last_login_at: datetime | None = None
 

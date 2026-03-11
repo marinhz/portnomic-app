@@ -44,13 +44,21 @@ __all__ = [
 PREMIUM_PLANS = frozenset({"professional", "enterprise"})
 
 
-async def require_premium_ai(db: AsyncSession, tenant_id: uuid.UUID) -> None:
+async def require_premium_ai(
+    db: AsyncSession,
+    tenant_id: uuid.UUID,
+    *,
+    is_platform_admin: bool = False,
+) -> None:
     """Require Professional or Enterprise plan for AI settings.
 
     Raises HTTPException 403 with upgrade_required if tenant is on starter plan.
+    Platform admins bypass the plan check (can manage AI settings for any tenant).
     In development environment, bypasses plan check for easier local testing.
     """
     if settings.environment == "development":
+        return
+    if is_platform_admin:
         return
     plan = await _get_tenant_plan(db, tenant_id)
     if plan not in PREMIUM_PLANS:

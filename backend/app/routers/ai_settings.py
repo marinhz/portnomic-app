@@ -49,8 +49,10 @@ async def _require_premium_and_admin(
     tenant_id: uuid.UUID = Depends(get_tenant_id),
     db: AsyncSession = Depends(get_db),
 ) -> tuple[CurrentUser, uuid.UUID, AsyncSession]:
-    """Dependency: require settings:write and premium plan."""
-    await require_premium_ai(db, tenant_id)
+    """Dependency: require settings:write and premium plan (or platform admin)."""
+    await require_premium_ai(
+        db, tenant_id, is_platform_admin=current_user.is_platform_admin or False
+    )
     return current_user, tenant_id, db
 
 

@@ -7,5 +7,8 @@
 | 8.3 | [Stripe integration](task-03-stripe-integration.md) | Backend |
 | 8.4 | [Limits service and feature gating](task-04-limits-service-and-feature-gating.md) | Backend |
 | 8.5 | [Billing admin UI](task-05-billing-admin-ui.md) *(optional)* | Frontend |
+| 8.6 | [Stripe to myPOS migration](task-06-stripe-to-mypos-migration.md) | Backend |
+| 8.7 | [Billing page myPOS redesign](task-07-billing-page-mypos-redesign.md) | Frontend |
+| 8.8 | [Plan upgrade gate page](task-08-plan-upgrade-gate-page.md) | Frontend |
 
 [← Back to Epic 8](../epic.md)

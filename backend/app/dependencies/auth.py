@@ -6,13 +6,27 @@ from jose import JWTError, jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
+from app.config import PLAN_LIMITS, settings
 from app.dependencies.database import get_db
 from app.models.role import Role
+from app.models.tenant import Tenant
 from app.models.user import User
 from app.schemas.auth import CurrentUser
 
 bearer_scheme = HTTPBearer()
+
+
+def _get_tenant_plan(tenant: Tenant | None) -> str:
+    """Extract plan from tenant. Returns 'starter' if unknown."""
+    if tenant is None:
+        return "starter"
+    if tenant.plan and tenant.plan in PLAN_LIMITS:
+        return tenant.plan
+    if tenant.settings and isinstance(tenant.settings, dict):
+        plan = tenant.settings.get("plan")
+        if plan in PLAN_LIMITS:
+            return plan
+    return "starter"
 
 
 async def get_current_user(
@@ -59,6 +73,10 @@ async def get_current_user(
     ]
     is_platform_admin = user.email.lower() in admin_emails
 
+    tenant_result = await db.execute(select(Tenant).where(Tenant.id == user.tenant_id))
+    tenant = tenant_result.scalar_one_or_none()
+    tenant_plan = _get_tenant_plan(tenant)
+
     role_name = role.name if role else None
     return CurrentUser(
         id=user.id,
@@ -69,6 +87,7 @@ async def get_current_user(
         permissions=permissions,
         mfa_enabled=user.mfa_enabled,
         is_platform_admin=is_platform_admin,
+        tenant_plan=tenant_plan,
         created_at=user.created_at,
         last_login_at=user.last_login_at,
     )

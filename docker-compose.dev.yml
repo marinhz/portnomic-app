@@ -22,7 +22,7 @@ services:
       DATABASE_URL_SYNC: postgresql://${POSTGRES_USER:-shipflow}:${POSTGRES_PASSWORD:-shipflow_dev}@postgres:5432/${POSTGRES_DB:-shipflow}?sslmode=disable
       REDIS_URL: redis://redis:6379/0
       CORS_ORIGINS: '["http://localhost","http://localhost:80","http://127.0.0.1","http://127.0.0.1:80"]'
-      ENVIRONMENT: development
+      ENVIRONMENT: ${ENVIRONMENT:-development}
       OAUTH_REDIRECT_BASE_URL: http://localhost/api
       OAUTH_FRONTEND_SUCCESS_URL: http://localhost/settings/integrations
     ports:

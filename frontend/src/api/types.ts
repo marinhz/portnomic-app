@@ -159,6 +159,7 @@ export type CurrentUser = {
   permissions: string[];
   mfa_enabled: boolean;
   is_platform_admin?: boolean;
+  tenant_plan?: string | null;
   created_at?: string | null;
   last_login_at?: string | null;
 };

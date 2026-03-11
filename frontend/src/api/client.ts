@@ -121,9 +121,22 @@ api.interceptors.response.use(
       );
     }
 
-    // Ensure auth failures always get a user-friendly message (e.g. wrong credentials)
     const status = error.response?.status;
-    const data = error.response?.data as { message?: string } | undefined;
+    const data = error.response?.data as
+      | { code?: string; message?: string; detail?: { code?: string; message?: string } }
+      | undefined;
+
+    // 403 upgrade_required: preserve code so pages can show upgrade gate (not generic error)
+    if (status === 403) {
+      const code = data?.code ?? data?.detail?.code;
+      const message =
+        data?.message ?? data?.detail?.message ?? "Upgrade required";
+      if (code === "upgrade_required") {
+        return Promise.reject(new ApiError("upgrade_required", message));
+      }
+    }
+
+    // Ensure auth failures always get a user-friendly message (e.g. wrong credentials)
     if (status === 401) {
       const message =
         data?.message && typeof data.message === "string"

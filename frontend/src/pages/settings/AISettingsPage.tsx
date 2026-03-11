@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import {
   Key,
   FileText,
@@ -7,7 +7,6 @@ import {
   TestTube,
   Trash2,
   RotateCcw,
-  TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
@@ -31,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { PlanUpgradeGate } from "@/components/PlanUpgradeGate";
 import {
   Dialog,
   DialogContent,
@@ -50,16 +50,34 @@ const DEFAULT_MODEL = "gpt-4o-mini";
 
 function isUpgradeRequired(err: unknown): boolean {
   if (axios.isAxiosError(err) && err.response?.status === 403) {
-    const data = err.response.data as { code?: string } | undefined;
-    return data?.code === "upgrade_required";
+    const data = err.response.data as
+      | { code?: string; detail?: { code?: string } }
+      | undefined;
+    return (
+      data?.code === "upgrade_required" ||
+      data?.detail?.code === "upgrade_required"
+    );
+  }
+  if (err instanceof ApiError && err.code === "upgrade_required") {
+    return true;
   }
   return false;
 }
 
 function getUpgradeMessage(err: unknown): string {
   if (axios.isAxiosError(err) && err.response?.data) {
-    const data = err.response.data as { message?: string };
-    return data.message ?? "Upgrade to Professional or Enterprise to configure your own AI settings.";
+    const data = err.response.data as {
+      message?: string;
+      detail?: { message?: string };
+    };
+    return (
+      data?.message ??
+      data?.detail?.message ??
+      "Upgrade to Professional or Enterprise to configure your own AI settings."
+    );
+  }
+  if (err instanceof ApiError) {
+    return err.message;
   }
   return "Upgrade to Professional or Enterprise to configure your own AI settings.";
 }
@@ -294,6 +312,21 @@ export function AISettingsPage() {
 
   if (loading) return <LoadingSpinner />;
 
+  // Upgrade required: show only the clean marketing-style upgrade page
+  if (upgradeRequired) {
+    return (
+      <PlanUpgradeGate
+        featureName="AI Settings"
+        requiredPlans="Professional and Enterprise"
+        message={upgradeMessage}
+        description="Configure your own AI provider, customize prompts, and more."
+        icon={Sparkles}
+        billingPath="/settings/billing"
+        variant="fullPage"
+      />
+    );
+  }
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -305,22 +338,6 @@ export function AISettingsPage() {
           </p>
         </div>
       </div>
-
-      {upgradeRequired && (
-        <Alert className="mb-6 border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
-          <TrendingUp className="size-4" />
-          <AlertDescription>
-            {upgradeMessage}{" "}
-            <Link
-              to="/settings/billing"
-              className="font-medium text-amber-800 underline hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300"
-            >
-              Upgrade to Professional or Enterprise
-            </Link>{" "}
-            to configure your own AI settings.
-          </AlertDescription>
-        </Alert>
-      )}
 
       {error && (
         <Alert variant="destructive" className="mb-4">
@@ -356,7 +373,7 @@ export function AISettingsPage() {
         </button>
       </div>
 
-      {activeTab === "integration" && (
+      {activeTab === "integration" ? (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
@@ -451,9 +468,7 @@ export function AISettingsPage() {
             </form>
           </CardContent>
         </Card>
-      )}
-
-      {activeTab === "prompts" && (
+      ) : (
         <div className="space-y-6">
           {(["da_email", "emission_report"] as const).map((parserType) => {
             const override = prompts.find((p) => p.parser_type === parserType);
@@ -536,7 +551,7 @@ export function AISettingsPage() {
         </div>
       )}
 
-      {/* Clear config confirmation */}
+      {/* Clear config confirmation - only when not upgrade-gated */}
       <Dialog
         open={confirmClear}
         onOpenChange={(open) => !open && setConfirmClear(false)}
