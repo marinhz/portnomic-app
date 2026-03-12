@@ -113,7 +113,7 @@ async def create_portal_session(
 # ── Cancel return (no auth; myPOS POSTs here, we redirect to frontend) ─────────────
 
 
-@router.post("/cancel-return")
+@router.post("/cancel-return", response_model=None)
 async def billing_cancel_return(request: Request) -> RedirectResponse | PlainTextResponse:
     """Handle myPOS cancel redirect.
 
