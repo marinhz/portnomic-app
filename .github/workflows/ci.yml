@@ -66,6 +66,10 @@ jobs:
         working-directory: backend
         run: alembic upgrade head
 
+      - name: Seed test database
+        working-directory: backend
+        run: python -m app.seed
+
       - name: Lint with ruff
         working-directory: backend
         run: ruff check .

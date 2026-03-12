@@ -2,7 +2,7 @@
 Integration test: Tenant isolation.
 
 Verifies that Tenant A cannot access Tenant B's data via API.
-Requires: database with seed data, PLATFORM_ADMIN_EMAILS=admin@portnomic.ai
+Requires: database with seed data (python -m app.seed), PLATFORM_ADMIN_EMAILS=admin@portnomic.com
 Run: pytest tests/test_tenant_isolation.py -v
 """
 
@@ -20,7 +20,7 @@ def test_tenant_a_cannot_access_tenant_b_vessels():
         # 1. Login as platform admin (tenant A - from seed)
         login_resp = client.post(
             "/api/v1/auth/login",
-            json={"email": "admin@portnomic.ai", "password": "admin123"},
+            json={"email": "admin@portnomic.com", "password": "admin123"},
         )
         assert login_resp.status_code == 200
         token_a = login_resp.json()["access_token"]
