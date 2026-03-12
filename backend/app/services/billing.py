@@ -51,9 +51,13 @@ def _validate_redirect_url(url: str, param_name: str) -> None:
 
 
 def _sign_mypos_request(params: dict, private_key_pem: str) -> str:
-    """Sign myPOS request: concat values (sorted keys, excl Signature), base64, RSA-SHA256, base64."""
-    sorted_keys = sorted(k for k in params.keys() if k != "Signature")
-    values = [str(params[k]) for k in sorted_keys]
+    """Sign myPOS request: concat values in params order (excl Signature), base64, RSA-SHA256, base64.
+
+    myPOS verifies using the order parameters appear in the POST body. We must sign with the same
+    order we send in the form. See: https://developers.mypos.com/apis/checkout-api/checkout-getting-started/authentication
+    """
+    keys_in_order = [k for k in params.keys() if k != "Signature"]
+    values = [str(params[k]) for k in keys_in_order]
     concat = "-".join(values)
     encoded = base64.b64encode(concat.encode()).decode()
     key = serialization.load_pem_private_key(
