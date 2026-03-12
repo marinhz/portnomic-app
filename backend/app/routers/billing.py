@@ -7,7 +7,7 @@ import logging
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import JSONResponse, PlainTextResponse, RedirectResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -108,6 +108,38 @@ async def create_portal_session(
             }
         },
     )
+
+
+# ── Cancel return (no auth; myPOS POSTs here, we redirect to frontend) ─────────────
+
+
+@router.post("/cancel-return")
+async def billing_cancel_return(request: Request) -> RedirectResponse | PlainTextResponse:
+    """Handle myPOS cancel redirect.
+
+    myPOS sends POST with Amount, Currency, OrderID, Signature when user cancels.
+    We verify signature (if cert configured), then redirect to frontend billing page.
+    """
+    if not settings.cors_origins:
+        logger.warning("CORS_ORIGINS not configured for cancel redirect")
+        return PlainTextResponse(
+            content="NOT_CONFIGURED", status_code=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
+
+    form = await request.form()
+    data = dict(form)
+
+    if settings.mypos_public_cert and not billing_svc.verify_mypos_notify(
+        data, settings.mypos_public_cert
+    ):
+        logger.warning("myPOS cancel signature verification failed")
+        return PlainTextResponse(
+            content="INVALID_SIGNATURE", status_code=status.HTTP_400_BAD_REQUEST
+        )
+
+    frontend_origin = settings.cors_origins[0].rstrip("/")
+    redirect_url = f"{frontend_origin}/settings/billing?canceled=1"
+    return RedirectResponse(url=redirect_url, status_code=status.HTTP_302_FOUND)
 
 
 # ── Webhook (no auth; verify via myPOS RSA signature) ─────────────────────────────

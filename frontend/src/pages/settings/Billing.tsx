@@ -112,7 +112,8 @@ export function Billing() {
     setPurchasingPlan(plan);
     const baseUrl = window.location.origin;
     const successUrl = `${baseUrl}/settings/billing?success=1`;
-    const cancelUrl = `${baseUrl}/settings/billing?canceled=1`;
+    // myPOS sends POST to cancel URL; backend accepts POST and redirects to billing page
+    const cancelUrl = `${baseUrl}/api/v1/billing/cancel-return`;
 
     try {
       const res = await api.post<{ url: string; form_data?: Record<string, string> }>(
