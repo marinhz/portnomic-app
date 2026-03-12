@@ -107,6 +107,7 @@ export function Sidebar({
   const hasSettingsWrite =
     user?.permissions.includes("settings:write") ?? false;
   const isPlatformAdmin = user?.is_platform_admin ?? false;
+  const showAISettings = hasSettingsWrite || isPlatformAdmin;
   const showOtherSettings =
     hasBillingManage || hasSettingsWrite || isPlatformAdmin;
 
@@ -192,7 +193,7 @@ export function Sidebar({
               label="Integrations"
               isCollapsed={isCollapsed}
             />
-            {(hasSettingsWrite || isPlatformAdmin) && (
+            {showAISettings && (
               <NavItem
                 to="/settings/ai"
                 icon={Sparkles}

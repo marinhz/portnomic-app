@@ -154,18 +154,25 @@ settings = Settings()
 
 # Plan limits for feature gating (None = unlimited)
 # See docs/monetization-plan.md for full plan details
+# Restructured (Task 8.10): Starter limits → Professional; Professional → Enterprise; new lower Starter
 PLAN_LIMITS: dict[str, dict[str, int | None]] = {
+    "demo": {
+        "users": 1,
+        "vessels": 2,
+        "das_per_month": 5,
+        "ai_parses_per_month": 10,
+    },
     "starter": {
+        "users": 2,
+        "vessels": 5,
+        "das_per_month": 25,
+        "ai_parses_per_month": 50,
+    },
+    "professional": {
         "users": 3,
         "vessels": 10,
         "das_per_month": 50,
         "ai_parses_per_month": 100,
-    },
-    "professional": {
-        "users": 10,
-        "vessels": 50,
-        "das_per_month": 200,
-        "ai_parses_per_month": 500,
     },
     "enterprise": {
         "users": None,

@@ -138,6 +138,7 @@ export type RoleResponse = {
 export type TenantCreate = {
   name: string;
   slug: string;
+  plan?: "demo" | "starter" | "professional" | "enterprise";
   initial_admin_email?: string;
   initial_admin_password?: string;
 };

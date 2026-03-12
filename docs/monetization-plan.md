@@ -8,8 +8,9 @@
 
 | Tier | Target | Users | Vessels | DAs/month | AI parse | Price (example) |
 |------|--------|-------|---------|-----------|----------|------------------|
-| **Starter** | Small agencies | 3 | 10 | 50 | 100 | €99/mo |
-| **Professional** | Mid-size | 10 | 50 | 200 | 500 | €299/mo |
+| **Demo** | Testing / trial | 1 | 2 | 5 | 10 | Free (super admin creates) |
+| **Starter** | Small agencies | 2 | 5 | 25 | 50 | €99/mo |
+| **Professional** | Mid-size | 3 | 10 | 50 | 100 | €299/mo |
 | **Enterprise** | Large / custom | Unlimited | Unlimited | Unlimited | Unlimited | Custom |
 
 ### Add-ons and Discounts
@@ -50,17 +51,23 @@
 
 ```python
 PLAN_LIMITS = {
+    "demo": {
+        "users": 1,
+        "vessels": 2,
+        "das_per_month": 5,
+        "ai_parses_per_month": 10,
+    },
     "starter": {
+        "users": 2,
+        "vessels": 5,
+        "das_per_month": 25,
+        "ai_parses_per_month": 50,
+    },
+    "professional": {
         "users": 3,
         "vessels": 10,
         "das_per_month": 50,
         "ai_parses_per_month": 100,
-    },
-    "professional": {
-        "users": 10,
-        "vessels": 50,
-        "das_per_month": 200,
-        "ai_parses_per_month": 500,
     },
     "enterprise": {
         "users": None,

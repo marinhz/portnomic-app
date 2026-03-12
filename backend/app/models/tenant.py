@@ -12,6 +12,7 @@ from app.models.base import Base
 class SubscriptionPlan(str, Enum):
     """Subscription plan tier."""
 
+    DEMO = "demo"  # Trial/testing; super admin assigns when creating company
     STARTER = "starter"
     PROFESSIONAL = "professional"
     ENTERPRISE = "enterprise"

@@ -39,6 +39,7 @@ async def create_tenant(
     db: AsyncSession,
     name: str,
     slug: str,
+    plan: str = "starter",
     settings: dict | None = None,
     initial_admin_email: str | None = None,
     initial_admin_password: str | None = None,
@@ -53,7 +54,7 @@ async def create_tenant(
     if existing.scalar_one_or_none():
         raise ValueError(f"Tenant with slug '{slug_lower}' already exists")
 
-    tenant = Tenant(name=name, slug=slug_lower, settings=settings or {})
+    tenant = Tenant(name=name, slug=slug_lower, plan=plan, settings=settings or {})
     db.add(tenant)
     await db.flush()
 

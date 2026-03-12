@@ -37,6 +37,7 @@ export type BillingStatus = {
 };
 
 const PLAN_LABELS: Record<string, string> = {
+  demo: "Demo",
   starter: "Starter",
   professional: "Professional",
   enterprise: "Enterprise",
@@ -249,10 +250,15 @@ export function Billing() {
                       (status.plan === "trial" || !status.plan));
                   const isProOrEnterprise =
                     status.plan === "professional" || status.plan === "enterprise";
+                  const isDemoOrStarterOrTrial =
+                    status.plan === "demo" ||
+                    status.plan === "starter" ||
+                    status.plan === "trial" ||
+                    !status.plan;
                   const canPurchaseViaCheckout =
                     plan.id === "professional"
                       ? !isProOrEnterprise
-                      : !isProOrEnterprise && (status.plan === "trial" || !status.plan);
+                      : !isProOrEnterprise && isDemoOrStarterOrTrial;
                   const needsContactSupport =
                     plan.id === "starter" && isProOrEnterprise;
 
@@ -293,7 +299,9 @@ export function Billing() {
                               ? "Redirecting…"
                               : plan.id === "professional"
                                 ? "Upgrade to Professional"
-                                : "Purchase Starter"}
+                                : status.plan === "demo"
+                                  ? "Upgrade to Starter"
+                                  : "Purchase Starter"}
                           </Button>
                         ) : needsContactSupport ? (
                           <Button variant="outline" asChild size="sm">

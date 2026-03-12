@@ -3,7 +3,7 @@ import { useAuth } from "./AuthContext";
 
 /**
  * Protects AI Settings routes. Only users with settings:write can access.
- * Redirects to Integrations settings if unauthorized.
+ * Demo and Starter see the nav link; plan gating happens on the page (upgrade gate).
  */
 export function AdminAISettingsRoute() {
   const { user } = useAuth();

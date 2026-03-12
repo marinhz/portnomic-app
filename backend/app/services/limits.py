@@ -52,15 +52,24 @@ async def require_premium_ai(
 ) -> None:
     """Require Professional or Enterprise plan for AI settings.
 
-    Raises HTTPException 403 with upgrade_required if tenant is on starter plan.
+    Raises HTTPException 403 with upgrade_required if tenant is on demo or starter.
     Platform admins bypass the plan check (can manage AI settings for any tenant).
-    In development environment, bypasses plan check for easier local testing.
+    Demo is always blocked (even in development). Starter blocked in production.
     """
-    if settings.environment == "development":
-        return
     if is_platform_admin:
         return
     plan = await _get_tenant_plan(db, tenant_id)
+    if plan == "demo":
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "upgrade_required",
+                "message": UPGRADE_MESSAGES["ai_settings"],
+                "limit_type": "ai_settings",
+            },
+        )
+    if settings.environment == "development" and plan in PREMIUM_PLANS:
+        return
     if plan not in PREMIUM_PLANS:
         raise HTTPException(
             status_code=403,

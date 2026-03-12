@@ -7,8 +7,17 @@ from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 class TenantCreate(BaseModel):
     name: str
     slug: str
+    plan: str = "starter"  # demo | starter | professional | enterprise
     initial_admin_email: EmailStr | None = None
     initial_admin_password: str | None = None
+
+    @field_validator("plan")
+    @classmethod
+    def validate_plan(cls, v: str) -> str:
+        allowed = {"demo", "starter", "professional", "enterprise"}
+        if v.lower() not in allowed:
+            raise ValueError(f"Plan must be one of: {', '.join(allowed)}")
+        return v.lower()
 
     @field_validator("slug")
     @classmethod
@@ -36,7 +45,7 @@ class TenantUpdate(BaseModel):
     def validate_plan(cls, v: str | None) -> str | None:
         if v is None:
             return v
-        allowed = {"starter", "professional", "enterprise"}
+        allowed = {"demo", "starter", "professional", "enterprise"}
         if v.lower() not in allowed:
             raise ValueError(f"Plan must be one of: {', '.join(allowed)}")
         return v.lower()

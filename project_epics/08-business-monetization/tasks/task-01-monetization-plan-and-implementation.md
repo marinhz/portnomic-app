@@ -30,8 +30,8 @@ Define a monetization strategy for ShipFlow AI and implement the technical found
 
 | Tier | Target | Users | Vessels | DAs/month | AI parse | Price (example) |
 |------|--------|-------|---------|-----------|----------|------------------|
-| **Starter** | Small agencies | 3 | 10 | 50 | 100 | €99/mo |
-| **Professional** | Mid-size | 10 | 50 | 200 | 500 | €299/mo |
+| **Starter** | Small agencies | 2 | 5 | 25 | 50 | €99/mo |
+| **Professional** | Mid-size | 3 | 10 | 50 | 100 | €299/mo |
 | **Enterprise** | Large / custom | Unlimited | Unlimited | Unlimited | Unlimited | Custom |
 
 - **Usage overage:** Optional add-on for DAs or AI parses beyond plan (e.g. €0.50/DA over cap).
@@ -94,10 +94,10 @@ Implementation is split into sub-tasks:
 ### Backend — plan limits config
 
 ```python
-# config or constants
+# config or constants (restructured Task 8.10)
 PLAN_LIMITS = {
-    "starter": {"users": 3, "vessels": 10, "das_per_month": 50, "ai_parses_per_month": 100},
-    "professional": {"users": 10, "vessels": 50, "das_per_month": 200, "ai_parses_per_month": 500},
+    "starter": {"users": 2, "vessels": 5, "das_per_month": 25, "ai_parses_per_month": 50},
+    "professional": {"users": 3, "vessels": 10, "das_per_month": 50, "ai_parses_per_month": 100},
     "enterprise": {"users": None, "vessels": None, "das_per_month": None, "ai_parses_per_month": None},  # unlimited
 }
 ```

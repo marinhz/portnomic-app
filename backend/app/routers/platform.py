@@ -31,6 +31,7 @@ async def create_tenant(
             db,
             name=body.name,
             slug=body.slug,
+            plan=body.plan,
             settings=None,
             initial_admin_email=body.initial_admin_email,
             initial_admin_password=body.initial_admin_password,
@@ -56,6 +57,7 @@ async def create_tenant(
         payload={
             "name": body.name,
             "slug": body.slug,
+            "plan": body.plan,
             "initial_admin_email": body.initial_admin_email,
         },
         ip_address=request.client.host if request.client else None,

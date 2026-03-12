@@ -12,10 +12,18 @@ function slugFromName(name: string): string {
     .replace(/^-|-$/g, "");
 }
 
+const PLAN_OPTIONS = [
+  { value: "demo", label: "Demo (1 user, 2 vessels, 5 DAs, 10 AI parses)" },
+  { value: "starter", label: "Starter" },
+  { value: "professional", label: "Professional" },
+  { value: "enterprise", label: "Enterprise" },
+] as const;
+
 export function CompanyForm() {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [plan, setPlan] = useState<"demo" | "starter" | "professional" | "enterprise">("starter");
   const [initialAdminEmail, setInitialAdminEmail] = useState("");
   const [initialAdminPassword, setInitialAdminPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -36,6 +44,7 @@ export function CompanyForm() {
     const body: TenantCreate = {
       name: name.trim(),
       slug: slug.trim().toLowerCase() || slugFromName(name),
+      plan,
     };
     if (initialAdminEmail.trim()) {
       body.initial_admin_email = initialAdminEmail.trim();
@@ -89,6 +98,32 @@ export function CompanyForm() {
               className={inputClass}
               placeholder="Acme Shipping"
             />
+          </div>
+
+          <div>
+            <label
+              htmlFor="plan"
+              className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
+            >
+              Plan
+            </label>
+            <select
+              id="plan"
+              value={plan}
+              onChange={(e) =>
+                setPlan(e.target.value as "demo" | "starter" | "professional" | "enterprise")
+              }
+              className={inputClass}
+            >
+              {PLAN_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Demo = low limits for testing. Starter is the default paid tier.
+            </p>
           </div>
 
           <div>
