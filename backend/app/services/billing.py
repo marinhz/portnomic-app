@@ -68,13 +68,21 @@ def _sign_mypos_request(params: dict, private_key_pem: str) -> str:
     return base64.b64encode(sig).decode()
 
 
-def verify_mypos_notify(data: dict, public_cert_pem: str) -> bool:
-    """Verify myPOS notify signature using their public certificate."""
+def _verify_mypos_signature(
+    data: dict, public_cert_pem: str, *, use_post_order: bool = False
+) -> bool:
+    """Verify myPOS signature using their public certificate.
+
+    use_post_order: If True, use the order of keys as received (POST body order).
+    If False, use alphabetical order (legacy; some myPOS flows may use this).
+    Per myPOS docs, parameters are concatenated in the order they appear in the POST.
+    """
     signature_b64 = data.get("Signature", "")
     if not signature_b64 or not public_cert_pem:
         return False
-    sorted_keys = sorted(k for k in data.keys() if k != "Signature")
-    values = [str(data[k]) for k in sorted_keys]
+    keys_excl_sig = [k for k in data.keys() if k != "Signature"]
+    keys_in_order = keys_excl_sig if use_post_order else sorted(keys_excl_sig)
+    values = [str(data[k]) for k in keys_in_order]
     concat = "-".join(values)
     encoded = base64.b64encode(concat.encode()).decode()
     cert = load_pem_x509_certificate(
@@ -87,6 +95,16 @@ def verify_mypos_notify(data: dict, public_cert_pem: str) -> bool:
         return True
     except Exception:
         return False
+
+
+def verify_mypos_notify(data: dict, public_cert_pem: str) -> bool:
+    """Verify myPOS IPCPurchaseNotify signature (uses alphabetical key order)."""
+    return _verify_mypos_signature(data, public_cert_pem, use_post_order=False)
+
+
+def verify_mypos_cancel(data: dict, public_cert_pem: str) -> bool:
+    """Verify myPOS cancel signature. Uses POST body order per myPOS docs."""
+    return _verify_mypos_signature(data, public_cert_pem, use_post_order=True)
 
 
 async def create_checkout_session(

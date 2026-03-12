@@ -68,6 +68,7 @@ class Settings(BaseSettings):
     mypos_key_index: int = 1
     mypos_private_key: str = ""  # PEM-encoded RSA private key for signing
     mypos_public_cert: str = ""  # PEM-encoded myPOS public cert for verifying notify
+    mypos_skip_cancel_verify: bool = False  # Skip cancel signature verify if prod cert unavailable
     mypos_base_url: str = "https://www.mypos.com/vmp/checkout-test"  # sandbox default
     mypos_currency: str = "EUR"
     mypos_amount_starter_monthly: float = 0.0

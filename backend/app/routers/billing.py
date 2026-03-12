@@ -141,13 +141,14 @@ async def billing_cancel_return(request: Request) -> RedirectResponse | PlainTex
     form = await request.form()
     data = dict(form)
 
-    if settings.mypos_public_cert and not billing_svc.verify_mypos_notify(
-        data, settings.mypos_public_cert
-    ):
-        logger.warning("myPOS cancel signature verification failed")
-        return PlainTextResponse(
-            content="INVALID_SIGNATURE", status_code=status.HTTP_400_BAD_REQUEST
-        )
+    if settings.mypos_skip_cancel_verify:
+        logger.info("myPOS cancel: skipping signature verification (MYPOS_SKIP_CANCEL_VERIFY)")
+    elif settings.mypos_public_cert:
+        if not billing_svc.verify_mypos_cancel(data, settings.mypos_public_cert):
+            logger.warning("myPOS cancel signature verification failed")
+            return PlainTextResponse(
+                content="INVALID_SIGNATURE", status_code=status.HTTP_400_BAD_REQUEST
+            )
 
     frontend_origin = settings.cors_origins[0].rstrip("/")
     redirect_url = f"{frontend_origin}/settings/billing?canceled=1"
