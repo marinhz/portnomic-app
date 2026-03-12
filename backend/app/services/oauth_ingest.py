@@ -349,9 +349,7 @@ async def _poll_outlook(db: AsyncSession, conn: MailConnection) -> int:
     return ingested
 
 
-async def _poll_tenant_imap(
-    db: AsyncSession, conn: MailConnection, *, full: bool = False
-) -> int:
+async def _poll_tenant_imap(db: AsyncSession, conn: MailConnection, *, full: bool = False) -> int:
     creds = decrypt_credentials(conn.encrypted_credentials)
     password = creds.get("password", "")
     if not conn.imap_host or not conn.imap_user or not password:

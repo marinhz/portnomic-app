@@ -76,7 +76,15 @@ async def test_resolve_port_uses_existing_port_when_found():
         assert port_id == existing_port.id
 
         # No duplicate created
-        count = (await db.execute(select(Port).where(Port.tenant_id == tenant.id, Port.code == "NLRTM"))).scalars().all()
+        count = (
+            (
+                await db.execute(
+                    select(Port).where(Port.tenant_id == tenant.id, Port.code == "NLRTM")
+                )
+            )
+            .scalars()
+            .all()
+        )
         assert len(count) == 1
 
         await db.rollback()
@@ -135,6 +143,7 @@ def test_parsed_line_item_to_dict_format():
 
 def test_da_type_detection_from_subject():
     """DA type: 'final' in subject -> final, else proforma."""
+
     # Logic from parse_worker
     def get_da_type(subject: str | None) -> str:
         return "final" if (subject or "").lower().find("final") >= 0 else "proforma"

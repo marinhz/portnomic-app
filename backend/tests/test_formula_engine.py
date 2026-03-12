@@ -12,8 +12,20 @@ def test_parsed_line_items_only():
     port_call_data = {"eta": "2025-03-15T06:00:00", "etd": "2025-03-16T18:00:00"}
     parsed_line_items = [
         {"description": "Pilotage", "amount": 1850.0, "currency": "USD", "quantity": 1.0},
-        {"description": "Port dues (per GRT)", "amount": 10625.0, "currency": "USD", "quantity": 12500.0, "unit_price": 0.85},
-        {"description": "Berth hire", "amount": 2312.5, "currency": "USD", "quantity": 18.5, "unit_price": 125.0},
+        {
+            "description": "Port dues (per GRT)",
+            "amount": 10625.0,
+            "currency": "USD",
+            "quantity": 12500.0,
+            "unit_price": 0.85,
+        },
+        {
+            "description": "Berth hire",
+            "amount": 2312.5,
+            "currency": "USD",
+            "quantity": 18.5,
+            "unit_price": 125.0,
+        },
         {"description": "Mooring/unmooring", "amount": 420.0, "currency": "USD"},
         {"description": "Agency fee", "amount": 750.0, "currency": "USD"},
     ]
@@ -82,9 +94,7 @@ def test_parsed_line_items_minimal_fields():
 def test_empty_parsed_line_items():
     """No parsed items with empty tariff yields empty items."""
     formula_config = {"items": [], "tax_rate": 0}
-    items, totals = compute_line_items(
-        formula_config, {}, {}, parsed_line_items=None
-    )
+    items, totals = compute_line_items(formula_config, {}, {}, parsed_line_items=None)
     assert len(items) == 0
     assert totals["subtotal"] == pytest.approx(0.0)
     assert totals["total"] == pytest.approx(0.0)

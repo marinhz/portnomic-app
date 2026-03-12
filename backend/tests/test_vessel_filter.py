@@ -3,8 +3,6 @@
 Ensures disbursement account emails and maritime content pass the filter.
 """
 
-import pytest
-
 from app.services.vessel_filter import is_vessel_related_email
 
 

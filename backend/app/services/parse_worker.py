@@ -17,12 +17,12 @@ from app.models.vessel import Vessel
 from app.schemas.ai import ParsedEmailResult
 from app.schemas.emission import EXTRACTION_SCHEMA_VERSION, EmissionExtractionResult
 from app.services.carbon_price import get_current_price_eur
+from app.services.disbursement_account import generate_da
 from app.services.emission_anomaly import detect_and_apply_anomalies
 from app.services.emission_calculator import calculate_emissions, estimate_eua
 from app.services.emission_parser import EMISSION_PROMPT_VERSION, parse_emission_content
-from app.services.disbursement_account import generate_da
-from app.services.llm_client import LlmConfigError, is_transient_error, parse_email_content
 from app.services.limits import check_da_limit
+from app.services.llm_client import LlmConfigError, is_transient_error, parse_email_content
 from app.services.prompts import get_prompt
 from app.services.report_type_detector import is_emission_report
 
