@@ -3,10 +3,16 @@ import { useNavigate } from "react-router";
 import { Plus } from "lucide-react";
 import api, { ApiError } from "@/api/client";
 import type { RoleResponse } from "@/api/types";
+import { getModuleSummary } from "@/lib/permissions";
 import { DataTable, type Column } from "@/components/DataTable";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const columns: Column<RoleResponse>[] = [
   { key: "name", header: "Name" },
@@ -15,17 +21,38 @@ const columns: Column<RoleResponse>[] = [
     header: "Permissions",
     render: (value) => {
       const perms = value as unknown as string[];
+      const summary = getModuleSummary(perms);
       return (
-        <div className="flex flex-wrap gap-2.5">
-          {perms.map((p) => (
-            <span
-              key={p}
-              className="rounded bg-mint-100 px-2.5 py-0.5 text-xs font-medium text-navy-800 dark:bg-navy-800 dark:text-mint-200"
-            >
-              {p}
-            </span>
-          ))}
-        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex cursor-help flex-wrap gap-x-3 gap-y-1 text-sm">
+              {summary.map(({ label, hasAccess }) => (
+                <span
+                  key={label}
+                  className={
+                    hasAccess
+                      ? "text-slate-700 dark:text-slate-200"
+                      : "text-slate-400 dark:text-slate-500"
+                  }
+                >
+                  {label} {hasAccess ? "✓" : "✗"}
+                </span>
+              ))}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs">
+            <div className="space-y-1">
+              <p className="font-medium">Full permissions</p>
+              <ul className="list-inside list-disc text-xs">
+                {perms.length > 0 ? (
+                  perms.map((p) => <li key={p}>{p}</li>)
+                ) : (
+                  <li className="text-slate-400">None</li>
+                )}
+              </ul>
+            </div>
+          </TooltipContent>
+        </Tooltip>
       );
     },
   },

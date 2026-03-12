@@ -135,6 +135,23 @@ export type RoleResponse = {
   created_at: string;
 };
 
+// Permissions manifest (GET /admin/permissions)
+export type PermissionItem = {
+  id: string;
+  label: string;
+  description: string;
+};
+
+export type PermissionModule = {
+  id: string;
+  label: string;
+  permissions: PermissionItem[];
+};
+
+export type PermissionsManifest = {
+  modules: PermissionModule[];
+};
+
 export type TenantCreate = {
   name: string;
   slug: string;

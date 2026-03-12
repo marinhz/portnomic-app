@@ -10,5 +10,7 @@
 | 8.6 | [Stripe to myPOS migration](task-06-stripe-to-mypos-migration.md) | Backend |
 | 8.7 | [Billing page myPOS redesign](task-07-billing-page-mypos-redesign.md) | Frontend |
 | 8.8 | [Plan upgrade gate page](task-08-plan-upgrade-gate-page.md) | Frontend |
+| 8.9 | [Billing cancel redirect 405 bug](task-09-billing-cancel-redirect-405-bug.md) | Backend |
+| 8.10 | [Plan limits restructure](task-10-plan-limits-restructure.md) | Backend |
 
 [← Back to Epic 8](../epic.md)

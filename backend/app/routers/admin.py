@@ -6,7 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies.database import get_db
 from app.dependencies.rbac import RequirePermission
 from app.dependencies.tenant import get_tenant_id
+from app.permissions_manifest import PERMISSIONS_MANIFEST
 from app.schemas.admin import (
+    PermissionsManifest,
     RoleCreate,
     RoleResponse,
     RoleUpdate,
@@ -125,6 +127,20 @@ async def update_user(
         user_agent=request.headers.get("user-agent"),
     )
     return SingleResponse(data=UserResponse.model_validate(user))
+
+
+# ── Permissions manifest ──────────────────────────────────────────────────────
+
+
+@router.get(
+    "/permissions",
+    response_model=SingleResponse[PermissionsManifest],
+)
+async def get_permissions_manifest(
+    current_user: CurrentUser = Depends(RequirePermission("admin:roles")),
+) -> SingleResponse[PermissionsManifest]:
+    """Return the full permissions manifest grouped by module."""
+    return SingleResponse(data=PermissionsManifest(modules=PERMISSIONS_MANIFEST))
 
 
 # ── Roles ────────────────────────────────────────────────────────────────────

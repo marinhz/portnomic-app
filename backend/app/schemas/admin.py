@@ -47,3 +47,22 @@ class RoleResponse(BaseModel):
     name: str
     permissions: list[str]
     created_at: datetime
+
+
+# ── Permissions manifest (for GET /admin/permissions) ─────────────────────────
+
+
+class PermissionItem(BaseModel):
+    id: str
+    label: str
+    description: str
+
+
+class PermissionModule(BaseModel):
+    id: str
+    label: str
+    permissions: list[PermissionItem]
+
+
+class PermissionsManifest(BaseModel):
+    modules: list[PermissionModule]
