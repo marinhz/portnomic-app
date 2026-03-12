@@ -48,7 +48,19 @@ async def get_billing_status(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Return plan, subscription_status, usage, and limits for tenant."""
-    return await billing_svc.get_billing_status(db=db, tenant_id=tenant_id)
+    try:
+        return await billing_svc.get_billing_status(db=db, tenant_id=tenant_id)
+    except Exception as e:
+        logger.exception("get_billing_status failed for tenant_id=%s", tenant_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": {
+                    "code": "BILLING_STATUS_ERROR",
+                    "message": str(e) if settings.environment != "production" else "Failed to load billing status",
+                }
+            },
+        )
 
 
 @router.post("/create-checkout-session")

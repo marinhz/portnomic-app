@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.x509 import load_pem_x509_certificate
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -76,7 +77,7 @@ def verify_mypos_notify(data: dict, public_cert_pem: str) -> bool:
     values = [str(data[k]) for k in sorted_keys]
     concat = "-".join(values)
     encoded = base64.b64encode(concat.encode()).decode()
-    cert = serialization.load_pem_x509_certificate(
+    cert = load_pem_x509_certificate(
         public_cert_pem.encode(), backend=default_backend()
     )
     pub_key = cert.public_key()
@@ -115,8 +116,18 @@ async def create_checkout_session(
     if not tenant:
         raise ValueError("Tenant not found")
 
-    notify_url = f"{settings.api_public_base_url.rstrip('/')}/api/v1/billing/webhooks/mypos"
-    if not settings.api_public_base_url or not notify_url.startswith("https://"):
+    base = (settings.api_public_base_url or "").strip().rstrip("/")
+    if base and base.startswith("https://"):
+        notify_url = f"{base}/api/v1/billing/webhooks/mypos"
+    elif settings.environment == "development":
+        # Local dev: use placeholder so checkout can proceed. Payment webhook won't work.
+        notify_url = "https://local-dev-placeholder.invalid/api/v1/billing/webhooks/mypos"
+        logger.warning(
+            "API_PUBLIC_BASE_URL not set or not HTTPS — using placeholder for URL_Notify. "
+            "Payment completion won't update subscription. For full flow: run 'ngrok http 8000' "
+            "and set API_PUBLIC_BASE_URL=https://YOUR-ID.ngrok-free.app"
+        )
+    else:
         raise ValueError(
             "API_PUBLIC_BASE_URL must be set to a public HTTPS URL for myPOS notify callbacks. "
             "For local testing: run 'ngrok http 8000' and set API_PUBLIC_BASE_URL=https://YOUR-ID.ngrok-free.app"
