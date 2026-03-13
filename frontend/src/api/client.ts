@@ -144,8 +144,19 @@ api.interceptors.response.use(
           : "Invalid email or password";
       return Promise.reject(new ApiError("unauthorized", message));
     }
-    if (status && status >= 400 && data?.message && typeof data.message === "string") {
-      return Promise.reject(new ApiError("api_error", data.message));
+    if (status && status >= 400) {
+      const message =
+        data?.message ??
+        (data?.detail && typeof data.detail === "object" && "message" in data.detail
+          ? (data.detail as { message?: string }).message
+          : undefined);
+      if (message && typeof message === "string") {
+        const code =
+          data?.detail && typeof data.detail === "object" && "code" in data.detail
+            ? (data.detail as { code?: string }).code ?? "api_error"
+            : "api_error";
+        return Promise.reject(new ApiError(code, message));
+      }
     }
 
     return Promise.reject(error);

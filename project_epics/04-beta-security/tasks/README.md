@@ -15,5 +15,6 @@
 | 4.11 | [Performance: Redis cache-aside, worker scaling](task-11-performance-cache-workers.md) |
 | 4.12 | [Health and readiness endpoints](task-12-health-ready-endpoints.md) |
 | 4.13 | [Structured logging and key metrics for beta](task-13-structured-logging-metrics.md) |
+| 4.14 | [Spam email prevention (post-launch)](task-14-spam-email-prevention.md) |
 
 [← Back to Epic 4](../epic.md)

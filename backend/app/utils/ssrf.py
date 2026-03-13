@@ -34,8 +34,8 @@ def validate_llm_base_url(url: str | None) -> None:
     parsed = urlparse(url.strip())
     host = parsed.hostname
     if not host:
-        raise ValueError("Invalid LLM base_url: no host")
+        raise ValueError("Invalid base URL. Check the endpoint address.")
     if _is_private_host(host):
-        raise ValueError(f"LLM base_url cannot target private/localhost addresses: {host}")
+        raise ValueError("Invalid base URL. Check the endpoint address.")
     if parsed.scheme not in ("http", "https"):
-        raise ValueError("LLM base_url must use http or https")
+        raise ValueError("Invalid base URL. Check the endpoint address.")

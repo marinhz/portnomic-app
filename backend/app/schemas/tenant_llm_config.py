@@ -56,6 +56,19 @@ class AISettingsPut(BaseModel):
         return _validate_base_url(v)
 
 
+class AITestBody(BaseModel):
+    """Optional body for POST /settings/ai/test — test unsaved config before save."""
+
+    api_key: str | None = None
+    base_url: str | None = None
+    model: str | None = None
+
+    @field_validator("base_url")
+    @classmethod
+    def check_base_url(cls, v: str | None) -> str | None:
+        return _validate_base_url(v)
+
+
 class PromptOverridePut(BaseModel):
     """Input for setting a custom prompt."""
 

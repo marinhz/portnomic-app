@@ -15,5 +15,6 @@
 | 2.11 | [POST /ai/parse and GET /ai/parse/{job_id} API](task-11-ai-parse-api.md) |
 | 2.12 | [Frontend: trigger parse and show job status/result](task-12-frontend-parse-trigger-status.md) |
 | 2.13 | [Bug: Parse email success redirects to 404 page](task-13-parse-success-redirect-404-bug.md) |
+| 2.15 | [AI integration connection test: better error handling](task-15-ai-integration-connection-test-error-handling.md) |
 
 [← Back to Epic 2](../epic.md)

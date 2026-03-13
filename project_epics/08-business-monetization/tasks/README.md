@@ -12,5 +12,6 @@
 | 8.8 | [Plan upgrade gate page](task-08-plan-upgrade-gate-page.md) | Frontend |
 | 8.9 | [Billing cancel redirect 405 bug](task-09-billing-cancel-redirect-405-bug.md) | Backend |
 | 8.10 | [Plan limits restructure](task-10-plan-limits-restructure.md) | Backend |
+| 8.11 | [Upgrade buttons → Contact support until myPOS key](task-11-upgrade-buttons-contact-support-until-mypos-key.md) | Frontend |
 
 [← Back to Epic 8](../epic.md)

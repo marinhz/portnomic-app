@@ -3,7 +3,13 @@ import logging
 import uuid
 from dataclasses import dataclass
 
-from openai import APIConnectionError, APITimeoutError, AsyncOpenAI, RateLimitError
+from openai import (
+    APIConnectionError,
+    APITimeoutError,
+    AsyncOpenAI,
+    AuthenticationError,
+    RateLimitError,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -164,9 +170,54 @@ async def test_llm_connection(
     *,
     tenant_id: uuid.UUID | None = None,
     db: AsyncSession | None = None,
-) -> None:
-    """Test LLM connection with minimal prompt. Raises LlmConfigError or API errors."""
-    llm_config = await _get_llm_config(db, tenant_id)
+    api_key: str | None = None,
+    base_url: str | None = None,
+    model: str | None = None,
+) -> tuple[str, str]:
+    """Test LLM connection with minimal prompt.
+
+    When api_key, base_url, or model are provided, use those for the test
+    (test-before-save). Otherwise resolve from tenant/platform config.
+
+    Returns (model_used, response_message) on success.
+    Raises LlmConfigError, APIConnectionError, APITimeoutError, RateLimitError,
+    AuthenticationError, or ValueError (invalid URL).
+    """
+    if api_key is not None or base_url is not None or model is not None:
+        # Test with override config (unsaved form values)
+        resolved_key = api_key
+        resolved_base = base_url
+        resolved_model = model
+
+        if resolved_key is None or not resolved_key.strip():
+            # Fall back to saved config for api_key when testing base_url/model only
+            creds = None
+            if db and tenant_id:
+                config = await get_tenant_llm_config(db, tenant_id)
+                creds = get_decrypted_llm_credentials(config)
+            if creds is None:
+                if not settings.llm_api_key or not settings.llm_api_key.strip():
+                    raise LlmConfigError("API key is required. Enter your key or save config first.")
+                resolved_key = settings.llm_api_key
+                resolved_base = resolved_base or settings.llm_api_url
+                resolved_model = resolved_model or settings.llm_model
+            else:
+                saved_key, saved_base, saved_model = creds
+                resolved_key = resolved_key or saved_key
+                resolved_base = resolved_base or saved_base
+                resolved_model = resolved_model or saved_model
+        else:
+            resolved_base = resolved_base or settings.llm_api_url
+            resolved_model = resolved_model or settings.llm_model
+
+        llm_config = LlmConfig(
+            api_key=resolved_key.strip(),
+            base_url=resolved_base.strip(),
+            model=resolved_model.strip(),
+        )
+    else:
+        llm_config = await _get_llm_config(db, tenant_id)
+
     client = _build_client(llm_config)
 
     await client.chat.completions.create(
@@ -176,3 +227,5 @@ async def test_llm_connection(
         ],
         max_tokens=10,
     )
+
+    return (llm_config.model, "OK")

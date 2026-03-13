@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "react-router";
-import { Check, CreditCard, Mail, TrendingUp } from "lucide-react";
-import { toast } from "sonner";
+import { Check, CreditCard, Mail } from "lucide-react";
 import api, { ApiError } from "@/api/client";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Button } from "@/components/ui/button";
@@ -43,7 +41,7 @@ const PLAN_LABELS: Record<string, string> = {
   enterprise: "Enterprise",
 };
 
-const SUPPORT_EMAIL = "support@portnomic.com";
+const SUPPORT_EMAIL = "contact@portnomic.com";
 const SUPPORT_SUBJECT = "ShipFlow - Plan change or cancellation";
 
 const STATUS_VARIANTS: Record<
@@ -71,11 +69,9 @@ const PURCHASABLE_PLANS = [
 ] as const;
 
 export function Billing() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [status, setStatus] = useState<BillingStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [purchasingPlan, setPurchasingPlan] = useState<string | null>(null);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -94,63 +90,6 @@ export function Billing() {
   useEffect(() => {
     fetchStatus();
   }, [fetchStatus]);
-
-  useEffect(() => {
-    const success = searchParams.get("success");
-    const canceled = searchParams.get("canceled");
-
-    if (success === "1") {
-      toast.success("Subscription updated successfully.");
-      fetchStatus();
-      setSearchParams({}, { replace: true });
-    } else if (canceled === "1") {
-      toast.info("Checkout was canceled.");
-      setSearchParams({}, { replace: true });
-    }
-  }, [searchParams, setSearchParams, fetchStatus]);
-
-  async function handlePurchase(plan: "starter" | "professional") {
-    setPurchasingPlan(plan);
-    const baseUrl = window.location.origin;
-    const successUrl = `${baseUrl}/settings/billing?success=1`;
-    // myPOS sends POST to cancel URL; backend accepts POST and redirects to billing page
-    const cancelUrl = `${baseUrl}/api/v1/billing/cancel-return`;
-
-    try {
-      const res = await api.post<{ url: string; form_data?: Record<string, string> }>(
-        "/billing/create-checkout-session",
-        {
-          plan,
-          success_url: successUrl,
-          cancel_url: cancelUrl,
-        },
-      );
-      if (res.data.form_data && res.data.url) {
-        const form = document.createElement("form");
-        form.method = "POST";
-        form.action = res.data.url;
-        for (const [k, v] of Object.entries(res.data.form_data)) {
-          const input = document.createElement("input");
-          input.type = "hidden";
-          input.name = k;
-          input.value = v;
-          form.appendChild(input);
-        }
-        document.body.appendChild(form);
-        form.submit();
-      } else if (res.data.url) {
-        window.location.href = res.data.url;
-      } else {
-        toast.error("No checkout URL returned.");
-        setPurchasingPlan(null);
-      }
-    } catch (err) {
-      toast.error(
-        err instanceof ApiError ? err.message : "Failed to start checkout",
-      );
-      setPurchasingPlan(null);
-    }
-  }
 
   if (loading) return <LoadingSpinner />;
 
@@ -232,13 +171,12 @@ export function Billing() {
             </CardContent>
           </Card>
 
-          {/* Purchase options */}
+          {/* Purchase options — Until myPOS key is available, all plan buttons use Contact support (mailto). Revert: restore handlePurchase + create-checkout-session for Starter/Professional. */}
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Purchase options</CardTitle>
               <CardDescription>
-                Choose a plan to purchase or upgrade. Enterprise plans require
-                contacting support.
+                Contact support to upgrade or change your plan.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -250,15 +188,6 @@ export function Billing() {
                       (status.plan === "trial" || !status.plan));
                   const isProOrEnterprise =
                     status.plan === "professional" || status.plan === "enterprise";
-                  const isDemoOrStarterOrTrial =
-                    status.plan === "demo" ||
-                    status.plan === "starter" ||
-                    status.plan === "trial" ||
-                    !status.plan;
-                  const canPurchaseViaCheckout =
-                    plan.id === "professional"
-                      ? !isProOrEnterprise
-                      : !isProOrEnterprise && isDemoOrStarterOrTrial;
                   const needsContactSupport =
                     plan.id === "starter" && isProOrEnterprise;
 
@@ -287,21 +216,6 @@ export function Billing() {
                         {isCurrentPlan ? (
                           <Button variant="outline" disabled size="sm">
                             Current plan
-                          </Button>
-                        ) : canPurchaseViaCheckout ? (
-                          <Button
-                            size="sm"
-                            onClick={() => handlePurchase(plan.id)}
-                            disabled={purchasingPlan !== null}
-                          >
-                            <TrendingUp className="size-4" />
-                            {purchasingPlan === plan.id
-                              ? "Redirecting…"
-                              : plan.id === "professional"
-                                ? "Upgrade to Professional"
-                                : status.plan === "demo"
-                                  ? "Upgrade to Starter"
-                                  : "Purchase Starter"}
                           </Button>
                         ) : needsContactSupport ? (
                           <Button variant="outline" asChild size="sm">

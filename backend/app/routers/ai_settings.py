@@ -7,7 +7,7 @@ Feature-gated to Professional and Enterprise plans.
 import logging
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies.database import get_db
@@ -16,6 +16,7 @@ from app.dependencies.tenant import get_tenant_id
 from app.schemas.auth import CurrentUser
 from app.schemas.tenant_llm_config import (
     AISettingsPut,
+    AITestBody,
     PromptOverridePut,
     TenantLlmConfigCreate,
     TenantLlmConfigResponse,
@@ -23,7 +24,14 @@ from app.schemas.tenant_llm_config import (
 )
 from app.services import audit as audit_svc
 from app.services.limits import require_premium_ai
-from app.services.llm_client import LlmConfigError, test_llm_connection
+from app.services.llm_client import (
+    APIConnectionError,
+    APITimeoutError,
+    AuthenticationError,
+    LlmConfigError,
+    RateLimitError,
+    test_llm_connection,
+)
 from app.services.prompt_override_svc import (
     list_prompt_overrides,
     reset_prompt_override,
@@ -211,25 +219,66 @@ async def reset_ai_prompt(
 # ── Test connection (optional) ──────────────────────────────────────────────────
 
 
+def _ai_test_error(code: str, message: str, status_code: int = status.HTTP_400_BAD_REQUEST):
+    """Raise HTTPException with structured error for frontend."""
+    raise HTTPException(status_code=status_code, detail={"code": code, "message": message})
+
+
 @router.post("/ai/test")
 async def test_ai_connection(
+    body: AITestBody | None = Body(None),
     dep: tuple[CurrentUser, uuid.UUID, AsyncSession] = Depends(_require_premium_and_admin),
 ) -> dict[str, str]:
-    """Test LLM connection with minimal prompt. Returns 200 if OK."""
+    """Test LLM connection with minimal prompt.
+
+    Accepts optional body with api_key, base_url, model to test unsaved config
+    (credentials from form before save). If provided, uses those values instead
+    of DB/platform config.
+    """
     _, tenant_id, db = dep
 
+    api_key = body.api_key if body else None
+    base_url = body.base_url if body else None
+    model = body.model if body else None
+
     try:
-        await test_llm_connection(tenant_id=tenant_id, db=db)
-    except LlmConfigError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "llm_config_error", "message": str(e)},
+        used_model, _ = await test_llm_connection(
+            tenant_id=tenant_id,
+            db=db,
+            api_key=api_key,
+            base_url=base_url,
+            model=model,
         )
+    except LlmConfigError as e:
+        _ai_test_error("llm_config_error", str(e))
+    except APIConnectionError:
+        _ai_test_error(
+            "connection_error",
+            "Cannot reach AI service. Check base URL and network.",
+            status.HTTP_502_BAD_GATEWAY,
+        )
+    except APITimeoutError:
+        _ai_test_error(
+            "timeout_error",
+            "Request timed out. AI service may be slow or unreachable.",
+            status.HTTP_504_GATEWAY_TIMEOUT,
+        )
+    except RateLimitError:
+        _ai_test_error("rate_limit_error", "Rate limit exceeded. Try again later.")
+    except AuthenticationError:
+        _ai_test_error("auth_error", "Invalid API key. Check your credentials.")
+    except ValueError as e:
+        _ai_test_error("invalid_url", str(e))
     except Exception as e:
         logger.warning("AI test connection failed: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail={"code": "llm_connection_error", "message": str(e)},
+        _ai_test_error(
+            "llm_connection_error",
+            str(e),
+            status.HTTP_502_BAD_GATEWAY,
         )
 
-    return {"status": "ok", "message": "Connection successful"}
+    return {
+        "status": "ok",
+        "message": f"Connected to {used_model}",
+        "model": used_model,
+    }

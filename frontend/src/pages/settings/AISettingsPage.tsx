@@ -209,8 +209,22 @@ export function AISettingsPage() {
     setUpgradeRequired(false);
 
     try {
-      await api.post<{ status: string; message: string }>("/settings/ai/test");
-      toast.success("Connection successful.");
+      const body: { api_key?: string; base_url?: string; model?: string } = {};
+      if (apiKey.trim()) body.api_key = apiKey.trim();
+      if (baseUrl.trim()) body.base_url = baseUrl.trim();
+      if (model.trim()) body.model = model.trim();
+
+      const res = await api.post<{
+        status: string;
+        message: string;
+        model?: string;
+      }>("/settings/ai/test", Object.keys(body).length > 0 ? body : undefined);
+
+      const msg =
+        res.data.model != null
+          ? `Connected to ${res.data.model}`
+          : res.data.message ?? "Connection successful.";
+      toast.success(msg);
     } catch (err) {
       if (isUpgradeRequired(err)) {
         setUpgradeRequired(true);
@@ -219,8 +233,13 @@ export function AISettingsPage() {
         const msg =
           err instanceof ApiError
             ? err.message
-            : axios.isAxiosError(err) && err.response?.data?.message
-              ? String(err.response.data.message)
+            : axios.isAxiosError(err) &&
+                err.response?.data?.detail &&
+                typeof err.response.data.detail === "object" &&
+                "message" in err.response.data.detail
+              ? String(
+                  (err.response.data.detail as { message?: string }).message,
+                )
               : "Connection test failed.";
         toast.error(msg);
       }

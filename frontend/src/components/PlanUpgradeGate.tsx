@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
+const SUPPORT_EMAIL = "contact@portnomic.com";
+
 export type PlanUpgradeGateProps = {
   /** Feature name for context (e.g. "AI Settings") */
   featureName: string;
@@ -21,10 +23,12 @@ export type PlanUpgradeGateProps = {
   description: string;
   /** Icon component (e.g. Sparkles, Lock, Zap) */
   icon: LucideIcon;
-  /** Billing/plans destination path */
+  /** Billing/plans destination path for "View plans" link */
   billingPath?: string;
   /** Optional "View plans" link - shown as secondary */
   showViewPlans?: boolean;
+  /** Contact support email (default: contact@portnomic.com) */
+  contactSupportEmail?: string;
   /** Full-page marketing layout (no surrounding chrome) */
   variant?: "card" | "fullPage";
   className?: string;
@@ -44,10 +48,14 @@ export function PlanUpgradeGate({
   icon: Icon,
   billingPath = DEFAULT_BILLING_PATH,
   showViewPlans = true,
+  contactSupportEmail = SUPPORT_EMAIL,
   variant = "card",
   className,
 }: PlanUpgradeGateProps) {
   const isFullPage = variant === "fullPage";
+  const contactSupportSubject = encodeURIComponent(
+    `ShipFlow - Upgrade to ${requiredPlans}`
+  );
 
   return (
     <div
@@ -99,7 +107,11 @@ export function PlanUpgradeGate({
           </CardHeader>
           <CardContent className="flex flex-wrap gap-3 justify-center sm:justify-start">
             <Button asChild size={isFullPage ? "lg" : "default"}>
-              <Link to={billingPath}>Upgrade plan</Link>
+              <a
+                href={`mailto:${contactSupportEmail}?subject=${contactSupportSubject}`}
+              >
+                Contact support
+              </a>
             </Button>
             {showViewPlans && (
               <Button variant="outline" asChild size={isFullPage ? "lg" : "default"}>
