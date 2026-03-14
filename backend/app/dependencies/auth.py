@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import PLAN_LIMITS, settings
+from app.services.limits import PREMIUM_PLANS
 from app.dependencies.database import get_db
 from app.models.role import Role
 from app.models.tenant import Tenant
@@ -78,6 +79,7 @@ async def get_current_user(
     tenant_plan = _get_tenant_plan(tenant)
 
     role_name = role.name if role else None
+    leakage_detector_enabled = tenant_plan in PREMIUM_PLANS
     return CurrentUser(
         id=user.id,
         tenant_id=user.tenant_id,
@@ -88,6 +90,7 @@ async def get_current_user(
         mfa_enabled=user.mfa_enabled,
         is_platform_admin=is_platform_admin,
         tenant_plan=tenant_plan,
+        leakage_detector_enabled=leakage_detector_enabled,
         created_at=user.created_at,
         last_login_at=user.last_login_at,
     )

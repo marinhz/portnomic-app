@@ -12,6 +12,7 @@ import {
   Sparkles,
   ChevronsLeft,
   ChevronsRight,
+  ShieldCheck,
 } from "lucide-react";
 import {
   Tooltip,
@@ -181,6 +182,12 @@ export function Sidebar({
           to="/emissions"
           icon={Leaf}
           label="Emissions"
+          isCollapsed={isCollapsed}
+        />
+        <NavItem
+          to="/leakage-detector"
+          icon={ShieldCheck}
+          label="Leakage Detector"
           isCollapsed={isCollapsed}
         />
 

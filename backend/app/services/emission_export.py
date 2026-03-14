@@ -8,6 +8,7 @@ Reference: EU MRV Regulation (EU) 2015/757 and delegated acts.
 
 import json
 import logging
+import time
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -217,8 +218,8 @@ EMISSION_REPORT_HTML_TEMPLATE = """
   .header {{ display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; border-bottom: 3px solid #0c4a6e; padding-bottom: 20px; }}
   .company {{ font-size: 20px; font-weight: bold; color: #0c4a6e; }}
   .doc-title {{ font-size: 16px; font-weight: bold; color: #0c4a6e; text-transform: uppercase; margin-bottom: 20px; }}
-  .meta-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }}
-  .meta-box {{ background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; }}
+  .meta-grid {{ display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; }}
+  .meta-box {{ flex: 1 1 calc(50% - 8px); min-width: 0; box-sizing: border-box; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; }}
   .meta-label {{ font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; margin-bottom: 4px; }}
   .meta-value {{ font-weight: 600; }}
   table {{ width: 100%; border-collapse: collapse; margin-bottom: 20px; }}
@@ -357,15 +358,22 @@ def export_pdf(mrv_data: dict[str, Any]) -> tuple[bytes, str]:
 
     Returns (content_bytes, media_type). Falls back to HTML if WeasyPrint not installed.
     """
+    t0 = time.perf_counter()
     html = _render_emission_report_html(mrv_data)
     try:
         from weasyprint import HTML
 
         pdf_bytes = HTML(string=html).write_pdf()
+        elapsed_ms = (time.perf_counter() - t0) * 1000
+        fuel_count = len(
+            mrv_data.get("co2_emissions", {}).get("per_fuel_breakdown", [])
+        )
         logger.info(
-            "Generated EU MRV PDF for report %s (%d bytes)",
+            "Generated EU MRV PDF for report %s (%d bytes, %d fuel entries) in %.1f ms",
             mrv_data.get("report_id"),
             len(pdf_bytes),
+            fuel_count,
+            elapsed_ms,
         )
         return (pdf_bytes, "application/pdf")
     except ImportError:

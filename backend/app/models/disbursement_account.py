@@ -47,6 +47,9 @@ class DisbursementAccount(Base):
     approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     approved_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    audit_status: Mapped[str | None] = mapped_column(
+        String(30), nullable=True
+    )  # completed | pending_manual_review | failed
 
     tenant = relationship("Tenant")
     port_call = relationship("PortCall")

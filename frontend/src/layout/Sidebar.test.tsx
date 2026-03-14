@@ -9,19 +9,22 @@ const mockUser = {
   tenant_id: "t1",
   email: "user@portnomic.com",
   role_id: "r1",
-  permissions: ["da:read", "admin:users"],
+  permissions: ["da:read", "admin:users", "settings:write"],
   mfa_enabled: false,
 };
 
+const mockUseAuth = vi.fn(() => ({
+  user: mockUser,
+  isAuthenticated: true,
+  isLoading: false,
+  login: vi.fn(),
+  logout: vi.fn(),
+  completeMfa: vi.fn(),
+  refreshUser: vi.fn(),
+}));
+
 vi.mock("@/auth/AuthContext", () => ({
-  useAuth: () => ({
-    user: mockUser,
-    isAuthenticated: true,
-    isLoading: false,
-    login: vi.fn(),
-    logout: vi.fn(),
-    completeMfa: vi.fn(),
-  }),
+  useAuth: () => mockUseAuth(),
 }));
 
 function renderSidebar(props: {
@@ -51,6 +54,15 @@ function renderSidebar(props: {
 describe("Sidebar", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseAuth.mockImplementation(() => ({
+      user: mockUser,
+      isAuthenticated: true,
+      isLoading: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+      completeMfa: vi.fn(),
+      refreshUser: vi.fn(),
+    }));
   });
 
   it("renders Portnomic branding", () => {
@@ -66,12 +78,11 @@ describe("Sidebar", () => {
     expect(screen.getByRole("link", { name: /emails/i })).toBeInTheDocument();
   });
 
-  it("renders IA structure: Operations, Inbox & Reports, Settings, Admin sections", () => {
+  it("renders IA structure: Operations, Inbox & Reports, Settings sections", () => {
     renderSidebar();
     expect(screen.getByText("Operations")).toBeInTheDocument();
     expect(screen.getByText("Inbox & Reports")).toBeInTheDocument();
     expect(screen.getByText("Settings")).toBeInTheDocument();
-    expect(screen.getByText("Admin")).toBeInTheDocument();
   });
 
   it("places Disbursement Accounts in Operations (after Port Calls)", () => {
@@ -90,14 +101,9 @@ describe("Sidebar", () => {
     expect(screen.getByRole("link", { name: /disbursement accounts/i })).toBeInTheDocument();
   });
 
-  it("renders admin links when user has admin permissions", () => {
+  it("renders Leakage Detector link for all users (plan gating on page, like AI Settings)", () => {
     renderSidebar();
-    expect(screen.getByRole("link", { name: /users/i })).toBeInTheDocument();
-  });
-
-  it("renders user email in footer", () => {
-    renderSidebar();
-    expect(screen.getByText("user@portnomic.com")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /leakage detector/i })).toBeInTheDocument();
   });
 
   it("calls onClose when close button is clicked", () => {

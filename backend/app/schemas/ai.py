@@ -28,6 +28,7 @@ class ParsedLineItem(BaseModel):
     currency: str = "USD"
     quantity: float | None = None
     unit_price: float | None = None
+    service_date: str | None = None  # ISO 8601 date/time for LD-001, LD-003
 
 
 class ParsedEmailResult(BaseModel):

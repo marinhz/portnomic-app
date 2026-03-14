@@ -30,6 +30,7 @@ import { ProfilePage } from "./pages/settings/ProfilePage";
 import { AdminAISettingsRoute } from "./auth/AdminAISettingsRoute";
 import { EmissionsDashboard } from "./pages/emissions/EmissionsDashboard";
 import { EmissionsReportDetail } from "./pages/emissions/EmissionsReportDetail";
+import { LeakageDetectorPage } from "./pages/leakage/LeakageDetectorPage";
 import { PlatformAdminRoute } from "./auth/PlatformAdminRoute";
 
 function RootLayout() {
@@ -72,6 +73,7 @@ export const router = createBrowserRouter([
               { path: "emails/:emailId", Component: EmailDetail },
               { path: "emissions", Component: EmissionsDashboard },
               { path: "emissions/reports/:id", Component: EmissionsReportDetail },
+              { path: "leakage-detector", Component: LeakageDetectorPage },
               { path: "settings/profile", Component: ProfilePage },
               { path: "settings/integrations", Component: IntegrationsPage },
               { path: "settings/billing", Component: Billing },

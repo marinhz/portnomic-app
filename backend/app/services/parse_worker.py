@@ -21,6 +21,7 @@ from app.services.disbursement_account import generate_da
 from app.services.emission_anomaly import detect_and_apply_anomalies
 from app.services.emission_calculator import calculate_emissions, estimate_eua
 from app.services.emission_parser import EMISSION_PROMPT_VERSION, parse_emission_content
+from app.services.leakage_audit_trigger import trigger_leakage_audit_after_parse
 from app.services.limits import check_da_limit
 from app.services.llm_client import LlmConfigError, is_transient_error, parse_email_content
 from app.services.prompts import get_prompt
@@ -388,6 +389,7 @@ async def process_email(
     await db.flush()
 
     # Auto-create DA when we have a port call and parsed line items (disbursement email).
+    da = None
     if port_call_id and result.line_items:
         da_type = "final" if (email.subject or "").lower().find("final") >= 0 else "proforma"
         da_limit = await check_da_limit(db, email.tenant_id)
@@ -430,6 +432,17 @@ async def process_email(
                 da_limit.current,
                 da_limit.limit,
                 email_id,
+            )
+
+        # Leakage audit trigger (Task 12.3): run for financial documents
+        try:
+            await trigger_leakage_audit_after_parse(db, email, da=da)
+        except Exception as exc:
+            logger.warning(
+                "Leakage audit failed for email %s (non-fatal): %s",
+                email_id,
+                exc,
+                exc_info=True,
             )
 
     logger.info("Email %s parsed successfully, job %s completed", email_id, job_id)

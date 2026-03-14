@@ -2,10 +2,14 @@
 
 import logging
 import re
+import tempfile
 import uuid
 from pathlib import Path
 
 from app.config import settings
+
+# Writable base path; falls back to temp dir if configured path has permission issues
+_storage_base: Path | None = None
 
 logger = logging.getLogger("shipflow.storage")
 
@@ -38,9 +42,31 @@ async def get_blob(blob_id: str) -> bytes | None:
     return await _get_local(blob_id)
 
 
+def _get_storage_base() -> Path:
+    """Return resolved storage base, using temp dir if configured path is not writable."""
+    global _storage_base
+    if _storage_base is not None:
+        return _storage_base
+    base = Path(settings.storage_local_path).resolve()
+    try:
+        base.mkdir(parents=True, exist_ok=True)
+        test_file = base / ".shipflow_write_test"
+        test_file.write_bytes(b"")
+        test_file.unlink()
+    except (PermissionError, OSError) as e:
+        logger.warning(
+            "Storage path %s not writable (%s). Using temp dir. Set STORAGE_LOCAL_PATH to a writable path to fix.",
+            base,
+            e,
+        )
+        base = Path(tempfile.gettempdir()) / "shipflow_storage"
+        base.mkdir(parents=True, exist_ok=True)
+    _storage_base = base
+    return base
+
+
 async def _store_local(blob_id: str, data: bytes) -> str:
-    base = Path(settings.storage_local_path)
-    base.mkdir(parents=True, exist_ok=True)
+    base = _get_storage_base()
     file_path = base / blob_id
     file_path.write_bytes(data)
     logger.info("Stored blob locally: %s (%d bytes)", blob_id, len(data))
@@ -48,7 +74,7 @@ async def _store_local(blob_id: str, data: bytes) -> str:
 
 
 async def _get_local(blob_id: str) -> bytes | None:
-    base = Path(settings.storage_local_path).resolve()
+    base = _get_storage_base()
     file_path = (base / blob_id).resolve()
     if not str(file_path).startswith(str(base) + "/") and not str(file_path).startswith(
         str(base) + "\\"

@@ -27,6 +27,8 @@ export type PlanUpgradeGateProps = {
   billingPath?: string;
   /** Optional "View plans" link - shown as secondary */
   showViewPlans?: boolean;
+  /** When provided (e.g. inside a modal), use onClick instead of Link for reliable navigation + close */
+  onViewPlansClick?: () => void;
   /** Contact support email (default: contact@portnomic.com) */
   contactSupportEmail?: string;
   /** Full-page marketing layout (no surrounding chrome) */
@@ -48,6 +50,7 @@ export function PlanUpgradeGate({
   icon: Icon,
   billingPath = DEFAULT_BILLING_PATH,
   showViewPlans = true,
+  onViewPlansClick,
   contactSupportEmail = SUPPORT_EMAIL,
   variant = "card",
   className,
@@ -113,11 +116,20 @@ export function PlanUpgradeGate({
                 Contact support
               </a>
             </Button>
-            {showViewPlans && (
-              <Button variant="outline" asChild size={isFullPage ? "lg" : "default"}>
-                <Link to={billingPath}>View plans</Link>
-              </Button>
-            )}
+            {showViewPlans &&
+              (onViewPlansClick ? (
+                <Button
+                  variant="outline"
+                  size={isFullPage ? "lg" : "default"}
+                  onClick={onViewPlansClick}
+                >
+                  View plans
+                </Button>
+              ) : (
+                <Button variant="outline" asChild size={isFullPage ? "lg" : "default"}>
+                  <Link to={billingPath}>View plans</Link>
+                </Button>
+              ))}
           </CardContent>
         </Card>
       </div>

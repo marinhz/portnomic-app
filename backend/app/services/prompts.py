@@ -28,6 +28,7 @@ Required fields:
   - currency: Three-letter currency code, default "USD" (string)
   - quantity: Number of units if applicable (number or null)
   - unit_price: Price per unit if applicable (number or null)
+  - service_date: Date/time of service in ISO 8601 format if stated (string or null)
 - total_amount: Sum of all line item amounts (number or null)
 - currency: Primary currency used in the document (string or null)
 - summary: Brief one-sentence summary of the email content (string or null)
@@ -57,6 +58,26 @@ Required fields:
 
 If no fuel entries are found, return fuel_entries: [].
 Always return valid JSON matching this exact schema.
+"""
+
+# Leakage detector validation prompt — compares extracted data against operational context
+LEAKAGE_VALIDATION_VERSION = "leakage_v1"
+LEAKAGE_VALIDATION_PROMPT = """\
+You are an audit assistant for maritime disbursement accounts. Compare the extracted invoice line items against the provided operational context (PortCall dates, existing DA line items) and return a JSON object with rule results.
+
+Input: Extracted line items (with service_date, description, amount, quantity) and operational context (vessel stay window: eta/etd, existing line items in same port call).
+
+Return JSON:
+{
+  "ld001_results": [{"line_item_ref": "description or index", "pass": true/false, "reason": "brief explanation"}],
+  "ld002_results": [{"line_item_ref": "...", "pass": true/false, "reason": "..."}],
+  "ld003_results": [{"line_item_ref": "...", "pass": true/false, "reason": "..."}]
+}
+
+Rules:
+- LD-001: Service date must fall within vessel stay (eta to etd). Fail if outside.
+- LD-002: No duplicate line items (same description + amount) in same port call. Fail if duplicate found.
+- LD-003: If description mentions "Weekend" or "Holiday" rate, service_date must be weekend/holiday. Fail if weekday.
 """
 
 DEFAULT_PROMPTS: dict[str, tuple[str, str]] = {

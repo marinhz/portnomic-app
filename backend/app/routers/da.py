@@ -3,11 +3,14 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import Response
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies.database import get_db
 from app.dependencies.rbac import RequirePermission
 from app.dependencies.tenant import get_tenant_id
+from app.models.anomaly import Anomaly
+from app.schemas.anomaly import AnomalyResponse
 from app.schemas.auth import CurrentUser
 from app.schemas.common import ErrorResponse, PaginatedResponse, PaginationMeta, SingleResponse
 from app.schemas.disbursement_account import (
@@ -19,7 +22,8 @@ from app.schemas.disbursement_account import (
 from app.services import audit as audit_svc
 from app.services import disbursement_account as da_svc
 from app.services.da_worker import process_da_send
-from app.services.storage import get_blob
+from app.services.pdf_generator import generate_pdf
+from app.services.storage import get_blob, store_blob
 
 router = APIRouter(prefix="/api/v1/da", tags=["disbursement-accounts"])
 
@@ -105,6 +109,45 @@ async def get_da(
 
 
 @router.get(
+    "/{da_id}/anomalies",
+    response_model=PaginatedResponse[AnomalyResponse],
+    responses={404: {"model": ErrorResponse}},
+)
+async def list_da_anomalies(
+    da_id: uuid.UUID,
+    current_user: CurrentUser = Depends(RequirePermission("da:read")),
+    tenant_id: uuid.UUID = Depends(get_tenant_id),
+    db: AsyncSession = Depends(get_db),
+) -> PaginatedResponse[AnomalyResponse]:
+    """List anomalies for a DA (AI Leakage Detector). Feature-gated to Professional/Enterprise."""
+    if not current_user.leakage_detector_enabled and not current_user.is_platform_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "upgrade_required",
+                "message": "Leakage Detector is available on Professional and Enterprise plans.",
+                "limit_type": "leakage_detector",
+            },
+        )
+    da = await da_svc.get_da(db, tenant_id, da_id)
+    if da is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": {"code": "DA_NOT_FOUND", "message": "Disbursement account not found"}},
+        )
+    stmt = select(Anomaly).where(
+        Anomaly.tenant_id == tenant_id,
+        Anomaly.da_id == da_id,
+    ).order_by(Anomaly.created_at.asc())
+    result = await db.execute(stmt)
+    anomalies = list(result.scalars().all())
+    return PaginatedResponse(
+        data=[AnomalyResponse.model_validate(a) for a in anomalies],
+        meta=PaginationMeta(total=len(anomalies), page=1, per_page=max(len(anomalies), 1)),
+    )
+
+
+@router.get(
     "/{da_id}/pdf",
     responses={404: {"model": ErrorResponse}},
 )
@@ -115,17 +158,41 @@ async def get_da_pdf(
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     da = await da_svc.get_da(db, tenant_id, da_id)
-    if da is None or not da.pdf_blob_id:
+    if da is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={"error": {"code": "PDF_NOT_FOUND", "message": "PDF not available for this DA"}},
+            detail={"error": {"code": "DA_NOT_FOUND", "message": "Disbursement account not found"}},
         )
-    pdf_data = await get_blob(da.pdf_blob_id)
+    if da.status not in ("approved", "sent"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": {
+                    "code": "INVALID_STATUS",
+                    "message": "DA must be approved or sent to generate PDF",
+                }
+            },
+        )
+
+    pdf_data: bytes | None = None
+    if da.pdf_blob_id:
+        pdf_data = await get_blob(da.pdf_blob_id)
+
     if pdf_data is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"error": {"code": "PDF_NOT_FOUND", "message": "PDF file not found in storage"}},
-        )
+        da_data = {
+            "id": str(da.id),
+            "type": da.type,
+            "version": da.version,
+            "status": da.status,
+            "currency": da.currency,
+            "line_items": da.line_items,
+            "totals": da.totals,
+        }
+        pdf_data = await generate_pdf(da_data)
+        blob_id = await store_blob(pdf_data, "pdf")
+        da.pdf_blob_id = blob_id
+        await db.commit()
+
     return Response(
         content=pdf_data,
         media_type="application/pdf",
@@ -177,9 +244,9 @@ async def approve_da(
     responses={400: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
 )
 async def send_da(
+    request: Request,
     da_id: uuid.UUID,
     body: DASendRequest | None = None,
-    request: Request = None,
     current_user: CurrentUser = Depends(RequirePermission("da:send")),
     tenant_id: uuid.UUID = Depends(get_tenant_id),
     db: AsyncSession = Depends(get_db),

@@ -13,5 +13,7 @@
 | 3.9 | [POST /da/{id}/send API](task-09-da-send-api.md) |
 | 3.10 | [DA workspace frontend](task-10-da-workspace-frontend.md) |
 | 3.11 | [Dashboard and port call links to DA](task-11-dashboard-da-links.md) |
+| 3.12 | [Fix DA PDF generation: no response when sending](task-12-fix-da-pdf-generation-no-response.md) |
+| 3.13 | [PDF generation performance & optimization](task-13-pdf-generation-performance-optimization.md) |
 
 [← Back to Epic 3](../epic.md)

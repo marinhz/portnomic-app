@@ -56,6 +56,7 @@ class CurrentUser(BaseModel):
     mfa_enabled: bool = False
     is_platform_admin: bool = False
     tenant_plan: str | None = None  # "demo" | "starter" | "professional" | "enterprise"
+    leakage_detector_enabled: bool = False  # True for Professional/Enterprise; feature gate
     created_at: datetime | None = None
     last_login_at: datetime | None = None
 

@@ -38,6 +38,7 @@ dependencies = [
     "opentelemetry-instrumentation-sqlalchemy>=0.41b0",
     "opentelemetry-instrumentation-redis>=0.41b0",
     "opentelemetry-instrumentation-httpx>=0.41b0",
+    "reportlab>=4.0",
     "weasyprint>=62.0",
 ]
 

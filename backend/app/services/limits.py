@@ -21,7 +21,7 @@ from app.models.tenant import Tenant
 from app.models.user import User
 from app.models.vessel import Vessel
 
-LimitType = Literal["users", "vessels", "das", "ai_parse", "ai_settings"]
+LimitType = Literal["users", "vessels", "das", "ai_parse", "ai_settings", "leakage_detector"]
 
 UPGRADE_MESSAGES: dict[str, str] = {
     "users": "User limit reached. Upgrade your plan to add more users.",
@@ -29,7 +29,33 @@ UPGRADE_MESSAGES: dict[str, str] = {
     "das": "Monthly DA limit reached. Upgrade your plan to generate more DAs.",
     "ai_parse": "Monthly AI parse limit reached. Upgrade your plan for more parses.",
     "ai_settings": "AI settings are available on Professional and Enterprise plans.",
+    "leakage_detector": "Leakage Detector is available on Professional and Enterprise plans.",
 }
+
+async def require_leakage_detector(
+    db: AsyncSession,
+    tenant_id: uuid.UUID,
+    *,
+    is_platform_admin: bool = False,
+) -> None:
+    """Require Professional or Enterprise plan for Leakage Detector.
+
+    Raises HTTPException 403 with upgrade_required if tenant is on demo or starter.
+    Platform admins bypass the plan check.
+    """
+    if is_platform_admin:
+        return
+    plan = await _get_tenant_plan(db, tenant_id)
+    if plan not in PREMIUM_PLANS:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "upgrade_required",
+                "message": UPGRADE_MESSAGES["leakage_detector"],
+                "limit_type": "leakage_detector",
+            },
+        )
+
 
 __all__ = [
     "check_user_limit",
@@ -37,8 +63,11 @@ __all__ = [
     "check_da_limit",
     "check_ai_parse_limit",
     "require_premium_ai",
+    "require_leakage_detector",
     "LimitResult",
     "raise_if_over_limit",
+    "get_tenant_plan",
+    "PREMIUM_PLANS",
 ]
 
 PREMIUM_PLANS = frozenset({"professional", "enterprise"})
@@ -118,6 +147,11 @@ def raise_if_over_limit(result: LimitResult, limit_type: LimitType) -> None:
                 "limit_type": limit_type,
             },
         )
+
+
+async def get_tenant_plan(db: AsyncSession, tenant_id: uuid.UUID) -> str:
+    """Get tenant plan from plan column. Falls back to starter for legacy data."""
+    return await _get_tenant_plan(db, tenant_id)
 
 
 async def _get_tenant_plan(db: AsyncSession, tenant_id: uuid.UUID) -> str:

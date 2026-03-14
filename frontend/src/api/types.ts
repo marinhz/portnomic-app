@@ -178,6 +178,7 @@ export type CurrentUser = {
   mfa_enabled: boolean;
   is_platform_admin?: boolean;
   tenant_plan?: string | null;
+  leakage_detector_enabled?: boolean;
   created_at?: string | null;
   last_login_at?: string | null;
 };
@@ -300,6 +301,23 @@ export type DAListResponse = {
   created_at: string;
   approved_at: string | null;
   sent_at: string | null;
+};
+
+/** Anomaly from AI Leakage Detector (GET /da/{id}/anomalies) */
+export type DAAnomalyResponse = {
+  id: string;
+  tenant_id: string;
+  email_id: string;
+  da_id: string | null;
+  port_call_id: string;
+  rule_id: string;
+  severity: "low" | "medium" | "high" | "critical";
+  description: string;
+  line_item_ref: string | null;
+  invoiced_value: number | null;
+  expected_value: number | null;
+  raw_evidence: Record<string, unknown> | null;
+  created_at: string;
 };
 
 export type ParseRequest = {
