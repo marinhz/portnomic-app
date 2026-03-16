@@ -85,9 +85,7 @@ def _verify_mypos_signature(
     values = [str(data[k]) for k in keys_in_order]
     concat = "-".join(values)
     encoded = base64.b64encode(concat.encode()).decode()
-    cert = load_pem_x509_certificate(
-        public_cert_pem.encode(), backend=default_backend()
-    )
+    cert = load_pem_x509_certificate(public_cert_pem.encode(), backend=default_backend())
     pub_key = cert.public_key()
     try:
         sig_bytes = base64.b64decode(signature_b64)

@@ -55,20 +55,31 @@ def _build_pdf_reportlab(da_data: dict) -> bytes:
 
     # Header: ShipFlow | Generated date (fits 7")
     header_table = Table(
-        [[
-            Paragraph('<b><font color="#0c4a6e" size="18">ShipFlow</font></b>', styles["Normal"]),
-            Paragraph(f'<font size="9" color="#64748b">Generated</font><br/>{generated_date}', styles["Normal"]),
-        ]],
+        [
+            [
+                Paragraph(
+                    '<b><font color="#0c4a6e" size="18">ShipFlow</font></b>', styles["Normal"]
+                ),
+                Paragraph(
+                    f'<font size="9" color="#64748b">Generated</font><br/>{generated_date}',
+                    styles["Normal"],
+                ),
+            ]
+        ],
         colWidths=[3.5 * inch, 3.5 * inch],
     )
-    header_table.setStyle(TableStyle([
-        ("ALIGN", (0, 0), (0, 0), "LEFT"),
-        ("ALIGN", (1, 0), (1, 0), "RIGHT"),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("LINEBELOW", (0, 0), (-1, 0), 3, primary),
-        ("TOPPADDING", (0, 0), (-1, -1), 4),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 14),
-    ]))
+    header_table.setStyle(
+        TableStyle(
+            [
+                ("ALIGN", (0, 0), (0, 0), "LEFT"),
+                ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LINEBELOW", (0, 0), (-1, 0), 3, primary),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 14),
+            ]
+        )
+    )
     elements.append(header_table)
     elements.append(Spacer(1, 0.2 * inch))
 
@@ -82,24 +93,36 @@ def _build_pdf_reportlab(da_data: dict) -> bytes:
 
     # Meta boxes (2x2 grid)
     meta_rows = [
-        [Paragraph('<font size="8" color="#64748b">DA REFERENCE</font>', styles["Normal"]), Paragraph(f'<b>{da_id_short}</b>', styles["Normal"]),
-        Paragraph('<font size="8" color="#64748b">VERSION</font>', styles["Normal"]), Paragraph(f'<b>v{version}</b>', styles["Normal"])],
-        [Paragraph('<font size="8" color="#64748b">STATUS</font>', styles["Normal"]), Paragraph(f'<b>{status}</b>', styles["Normal"]),
-        Paragraph('<font size="8" color="#64748b">CURRENCY</font>', styles["Normal"]), Paragraph(f'<b>{currency}</b>', styles["Normal"])],
+        [
+            Paragraph('<font size="8" color="#64748b">DA REFERENCE</font>', styles["Normal"]),
+            Paragraph(f"<b>{da_id_short}</b>", styles["Normal"]),
+            Paragraph('<font size="8" color="#64748b">VERSION</font>', styles["Normal"]),
+            Paragraph(f"<b>v{version}</b>", styles["Normal"]),
+        ],
+        [
+            Paragraph('<font size="8" color="#64748b">STATUS</font>', styles["Normal"]),
+            Paragraph(f"<b>{status}</b>", styles["Normal"]),
+            Paragraph('<font size="8" color="#64748b">CURRENCY</font>', styles["Normal"]),
+            Paragraph(f"<b>{currency}</b>", styles["Normal"]),
+        ],
     ]
     # Meta: 4 cols fitting 7" (1.75" each)
     meta_table = Table(meta_rows, colWidths=[1.75 * inch] * 4)
-    meta_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), light_bg),
-        ("BOX", (0, 0), (-1, -1), 1, border),
-        ("INNERGRID", (0, 0), (-1, -1), 1, border),
-        ("LEFTPADDING", (0, 0), (-1, -1), 10),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
-        ("TOPPADDING", (0, 0), (-1, -1), 8),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
-    ]))
+    meta_table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), light_bg),
+                ("BOX", (0, 0), (-1, -1), 1, border),
+                ("INNERGRID", (0, 0), (-1, -1), 1, border),
+                ("LEFTPADDING", (0, 0), (-1, -1), 10),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+                ("TOPPADDING", (0, 0), (-1, -1), 8),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+            ]
+        )
+    )
     elements.append(meta_table)
     elements.append(Spacer(1, 0.25 * inch))
 
@@ -110,30 +133,36 @@ def _build_pdf_reportlab(da_data: dict) -> bytes:
     ]
     for item in line_items:
         desc = (item.get("description", "") or "").replace("&", "&amp;").replace("<", "&lt;")
-        table_data.append([
-            Paragraph(desc, styles["Normal"]) if desc else "",
-            str(item.get("quantity", 1)),
-            f"{item.get('unit_price', 0):,.2f}",
-            f"{item.get('amount', 0):,.2f}",
-        ])
+        table_data.append(
+            [
+                Paragraph(desc, styles["Normal"]) if desc else "",
+                str(item.get("quantity", 1)),
+                f"{item.get('unit_price', 0):,.2f}",
+                f"{item.get('amount', 0):,.2f}",
+            ]
+        )
 
     col_widths = [3.2 * inch, 0.55 * inch, 1.5 * inch, 1.5 * inch]  # total ~6.75"
     tbl = Table(table_data, colWidths=col_widths, repeatRows=1)
-    tbl.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), primary),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("FONTSIZE", (0, 0), (-1, 0), 9),
-        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
-        ("ALIGN", (1, 0), (1, -1), "CENTER"),
-        ("ALIGN", (2, 0), (-1, -1), "RIGHT"),
-        ("ALIGN", (0, 0), (0, -1), "LEFT"),
-        ("GRID", (0, 0), (-1, -1), 0.5, border),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, light_bg]),
-        ("LEFTPADDING", (0, 0), (-1, -1), 10),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
-        ("TOPPADDING", (0, 0), (-1, -1), 8),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-    ]))
+    tbl.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), primary),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTSIZE", (0, 0), (-1, 0), 9),
+                ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                ("ALIGN", (1, 0), (1, -1), "CENTER"),
+                ("ALIGN", (2, 0), (-1, -1), "RIGHT"),
+                ("ALIGN", (0, 0), (0, -1), "LEFT"),
+                ("GRID", (0, 0), (-1, -1), 0.5, border),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, light_bg]),
+                ("LEFTPADDING", (0, 0), (-1, -1), 10),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+                ("TOPPADDING", (0, 0), (-1, -1), 8),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+            ]
+        )
+    )
     elements.append(tbl)
     elements.append(Spacer(1, 0.15 * inch))
 
@@ -147,18 +176,22 @@ def _build_pdf_reportlab(da_data: dict) -> bytes:
         ["", "Total:", f"{currency} {total}"],
     ]
     totals_table = Table(totals_data, colWidths=[4 * inch, 1.2 * inch, 1.5 * inch])  # ~6.7"
-    totals_table.setStyle(TableStyle([
-        ("ALIGN", (1, 0), (1, -1), "RIGHT"),
-        ("ALIGN", (2, 0), (2, -1), "RIGHT"),
-        ("FONTSIZE", (0, 0), (-1, -1), 10),
-        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
-        ("TOPPADDING", (0, 0), (-1, -1), 4),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-        ("LINEABOVE", (1, 2), (2, 2), 2, primary),
-        ("FONTNAME", (1, 2), (2, 2), "Helvetica-Bold"),
-        ("FONTSIZE", (1, 2), (2, 2), 12),
-        ("TEXTCOLOR", (1, 2), (2, 2), primary),
-    ]))
+    totals_table.setStyle(
+        TableStyle(
+            [
+                ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+                ("ALIGN", (2, 0), (2, -1), "RIGHT"),
+                ("FONTSIZE", (0, 0), (-1, -1), 10),
+                ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                ("LINEABOVE", (1, 2), (2, 2), 2, primary),
+                ("FONTNAME", (1, 2), (2, 2), "Helvetica-Bold"),
+                ("FONTSIZE", (1, 2), (2, 2), 12),
+                ("TEXTCOLOR", (1, 2), (2, 2), primary),
+            ]
+        )
+    )
     elements.append(totals_table)
     elements.append(Spacer(1, 0.4 * inch))
 

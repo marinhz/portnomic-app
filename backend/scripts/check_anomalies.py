@@ -27,12 +27,18 @@ async def main() -> None:
         print()
 
         # Count DAs
-        r = await db.execute(select(func.count()).select_from(DisbursementAccount).where(DisbursementAccount.tenant_id == tid))
+        r = await db.execute(
+            select(func.count())
+            .select_from(DisbursementAccount)
+            .where(DisbursementAccount.tenant_id == tid)
+        )
         da_count = r.scalar() or 0
         print(f"DAs: {da_count}")
 
         # Count anomalies
-        r = await db.execute(select(func.count()).select_from(Anomaly).where(Anomaly.tenant_id == tid))
+        r = await db.execute(
+            select(func.count()).select_from(Anomaly).where(Anomaly.tenant_id == tid)
+        )
         anom_count = r.scalar() or 0
         print(f"Anomalies: {anom_count}")
 
@@ -43,7 +49,10 @@ async def main() -> None:
 
         # List anomalies with DA ids
         r = await db.execute(
-            select(Anomaly).where(Anomaly.tenant_id == tid).order_by(Anomaly.created_at.asc()).limit(20)
+            select(Anomaly)
+            .where(Anomaly.tenant_id == tid)
+            .order_by(Anomaly.created_at.asc())
+            .limit(20)
         )
         anomalies = list(r.scalars().all())
         print()

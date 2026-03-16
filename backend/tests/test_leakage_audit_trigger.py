@@ -20,7 +20,9 @@ from app.services.leakage_audit_trigger import (
 
 def test_is_financial_document_with_line_items():
     """Financial document has non-empty line_items."""
-    assert _is_financial_document({"line_items": [{"description": "Pilotage", "amount": 500}]}) is True
+    assert (
+        _is_financial_document({"line_items": [{"description": "Pilotage", "amount": 500}]}) is True
+    )
     assert _is_financial_document({"line_items": [{}]}) is True
 
 
@@ -97,7 +99,11 @@ async def test_trigger_skips_for_starter_plan():
             external_id="ext-2",
             ai_raw_output={
                 "line_items": [
-                    {"description": "Pilotage", "amount": 500, "service_date": "2026-03-11T10:00:00Z"},
+                    {
+                        "description": "Pilotage",
+                        "amount": 500,
+                        "service_date": "2026-03-11T10:00:00Z",
+                    },
                 ],
             },
             port_call_id=port_call.id,
@@ -151,7 +157,11 @@ async def test_trigger_skips_when_idempotency_key_exists():
             external_id="ext-3",
             ai_raw_output={
                 "line_items": [
-                    {"description": "Pilotage", "amount": 500, "service_date": "2026-03-11T10:00:00Z"},
+                    {
+                        "description": "Pilotage",
+                        "amount": 500,
+                        "service_date": "2026-03-11T10:00:00Z",
+                    },
                 ],
             },
             port_call_id=port_call.id,
@@ -206,7 +216,11 @@ async def test_trigger_runs_audit_and_sets_idempotency():
             external_id="ext-4",
             ai_raw_output={
                 "line_items": [
-                    {"description": "Pilotage", "amount": 500, "service_date": "2026-03-09T10:00:00Z"},
+                    {
+                        "description": "Pilotage",
+                        "amount": 500,
+                        "service_date": "2026-03-09T10:00:00Z",
+                    },
                 ],
             },
             port_call_id=port_call.id,
@@ -268,7 +282,11 @@ async def test_circuit_breaker_marks_pending_manual_review_on_audit_failure():
             external_id="ext-circuit",
             ai_raw_output={
                 "line_items": [
-                    {"description": "Pilotage", "amount": 500, "service_date": "2026-03-11T10:00:00Z"},
+                    {
+                        "description": "Pilotage",
+                        "amount": 500,
+                        "service_date": "2026-03-11T10:00:00Z",
+                    },
                 ],
             },
             port_call_id=port_call.id,
@@ -331,7 +349,11 @@ async def test_circuit_breaker_sets_da_audit_status_when_da_provided():
             external_id="ext-circuit-da",
             ai_raw_output={
                 "line_items": [
-                    {"description": "Pilotage", "amount": 500, "service_date": "2026-03-11T10:00:00Z"},
+                    {
+                        "description": "Pilotage",
+                        "amount": 500,
+                        "service_date": "2026-03-11T10:00:00Z",
+                    },
                 ],
             },
             port_call_id=port_call.id,

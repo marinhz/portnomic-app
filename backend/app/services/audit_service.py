@@ -124,18 +124,20 @@ def _ld002_duplicate_detection(
                 continue
             key = (desc, amt)
             if key in seen:
-                anomalies.append({
-                    "rule_id": "LD-002",
-                    "severity": RULE_SEVERITY["LD-002"],
-                    "line_item_ref": desc[:512],
-                    "invoiced_value": Decimal(str(amt)),
-                    "expected_value": None,
-                    "description": (
-                        f"Duplicate line item: '{desc}' for {amt} already exists "
-                        "in this port call."
-                    ),
-                    "raw_evidence": {"description": desc, "amount": amt},
-                })
+                anomalies.append(
+                    {
+                        "rule_id": "LD-002",
+                        "severity": RULE_SEVERITY["LD-002"],
+                        "line_item_ref": desc[:512],
+                        "invoiced_value": Decimal(str(amt)),
+                        "expected_value": None,
+                        "description": (
+                            f"Duplicate line item: '{desc}' for {amt} already exists "
+                            "in this port call."
+                        ),
+                        "raw_evidence": {"description": desc, "amount": amt},
+                    }
+                )
             else:
                 seen[key] = li
 
@@ -214,22 +216,24 @@ def _ld004_quantity_variance(
 
     # Heuristic: > 24h tug/pilot for single port call is suspicious
     if total_invoiced_hours > 24.0:
-        anomalies.append({
-            "rule_id": "LD-004",
-            "severity": RULE_SEVERITY["LD-004"],
-            "line_item_ref": f"Tug/Pilot services (total {total_invoiced_hours}h)",
-            "invoiced_value": Decimal(str(total_invoiced_hours)),
-            "expected_value": None,
-            "description": (
-                f"Invoiced tug/pilot hours ({total_invoiced_hours}) exceed 24h for "
-                "single port call. Verify against Noon Reports."
-            ),
-            "raw_evidence": {
-                "total_invoiced_hours": total_invoiced_hours,
-                "noon_reports_count": len(emission_reports),
-                "vessel_id": str(vessel.id) if vessel else None,
-            },
-        })
+        anomalies.append(
+            {
+                "rule_id": "LD-004",
+                "severity": RULE_SEVERITY["LD-004"],
+                "line_item_ref": f"Tug/Pilot services (total {total_invoiced_hours}h)",
+                "invoiced_value": Decimal(str(total_invoiced_hours)),
+                "expected_value": None,
+                "description": (
+                    f"Invoiced tug/pilot hours ({total_invoiced_hours}) exceed 24h for "
+                    "single port call. Verify against Noon Reports."
+                ),
+                "raw_evidence": {
+                    "total_invoiced_hours": total_invoiced_hours,
+                    "noon_reports_count": len(emission_reports),
+                    "vessel_id": str(vessel.id) if vessel else None,
+                },
+            }
+        )
 
     return anomalies
 
@@ -265,16 +269,20 @@ async def run_audit(
 
     all_line_items_for_ld002: list[dict[str, Any]] = []
     for d in das:
-        for li in (d.line_items or []):
-            all_line_items_for_ld002.append({
+        for li in d.line_items or []:
+            all_line_items_for_ld002.append(
+                {
+                    "description": li.get("description"),
+                    "amount": li.get("amount"),
+                }
+            )
+    for li in line_items:
+        all_line_items_for_ld002.append(
+            {
                 "description": li.get("description"),
                 "amount": li.get("amount"),
-            })
-    for li in line_items:
-        all_line_items_for_ld002.append({
-            "description": li.get("description"),
-            "amount": li.get("amount"),
-        })
+            }
+        )
 
     # Emission reports for port call (LD-004)
     stmt = select(EmissionReport).where(
@@ -296,9 +304,7 @@ async def run_audit(
     )
     anomalies_data.extend(_ld002_duplicate_detection(all_line_items_for_ld002))
     anomalies_data.extend(_ld003_tariff_shift(line_items))
-    anomalies_data.extend(
-        _ld004_quantity_variance(line_items, emission_reports, vessel)
-    )
+    anomalies_data.extend(_ld004_quantity_variance(line_items, emission_reports, vessel))
 
     # Persist anomalies and log to AuditLog
     created: list[Anomaly] = []

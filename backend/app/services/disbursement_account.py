@@ -74,10 +74,7 @@ async def list_das(
         .group_by(Anomaly.da_id)
     )
     da_has_anomalies = {row[0]: row[1] > 0 for row in anomaly_counts.all()}
-    rows = [
-        DAListRow(da=d, has_anomalies=da_has_anomalies.get(d.id, False))
-        for d in das
-    ]
+    rows = [DAListRow(da=d, has_anomalies=da_has_anomalies.get(d.id, False)) for d in das]
     return rows, total
 
 

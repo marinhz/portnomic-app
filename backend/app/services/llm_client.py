@@ -196,7 +196,9 @@ async def test_llm_connection(
                 creds = get_decrypted_llm_credentials(config)
             if creds is None:
                 if not settings.llm_api_key or not settings.llm_api_key.strip():
-                    raise LlmConfigError("API key is required. Enter your key or save config first.")
+                    raise LlmConfigError(
+                        "API key is required. Enter your key or save config first."
+                    )
                 resolved_key = settings.llm_api_key
                 resolved_base = resolved_base or settings.llm_api_url
                 resolved_model = resolved_model or settings.llm_model

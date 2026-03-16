@@ -417,9 +417,7 @@ async def seed_marketing(db: AsyncSession) -> None:
         .limit(6)
     )
     das_to_seed = list(das_result.scalars().all())
-    emails_result = await db.execute(
-        select(Email).where(Email.tenant_id == tenant_id).limit(1)
-    )
+    emails_result = await db.execute(select(Email).where(Email.tenant_id == tenant_id).limit(1))
     default_email = emails_result.scalar_one_or_none()
 
     ANOMALY_SAMPLES = [

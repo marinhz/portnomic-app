@@ -49,11 +49,9 @@ def test_generate_pdf_returns_bytes():
     assert isinstance(result, bytes)
     assert len(result) > 0
     # ReportLab (primary) or WeasyPrint produce PDF; fallback is HTML when neither available
-    assert (
-        result.startswith(b"%PDF")
-        or b"<!DOCTYPE" in result
-        or b"html" in result.lower()
-    ), "Expected PDF or HTML fallback"
+    assert result.startswith(b"%PDF") or b"<!DOCTYPE" in result or b"html" in result.lower(), (
+        "Expected PDF or HTML fallback"
+    )
 
 
 def test_export_pdf_returns_tuple():

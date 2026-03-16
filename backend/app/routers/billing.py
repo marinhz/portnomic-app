@@ -57,7 +57,9 @@ async def get_billing_status(
             detail={
                 "error": {
                     "code": "BILLING_STATUS_ERROR",
-                    "message": str(e) if settings.environment != "production" else "Failed to load billing status",
+                    "message": str(e)
+                    if settings.environment != "production"
+                    else "Failed to load billing status",
                 }
             },
         )

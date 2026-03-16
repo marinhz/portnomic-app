@@ -16,9 +16,7 @@ class Port(Base):
         UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    code: Mapped[str] = mapped_column(
-        String(20), nullable=False
-    )  # UN/LOCODE (e.g. NLRTM, SGSIN)
+    code: Mapped[str] = mapped_column(String(20), nullable=False)  # UN/LOCODE (e.g. NLRTM, SGSIN)
     country: Mapped[str | None] = mapped_column(String(100), nullable=True)
     timezone: Mapped[str | None] = mapped_column(String(50), nullable=True)
     latitude: Mapped[float | None] = mapped_column(Float, nullable=True)

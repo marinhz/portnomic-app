@@ -95,7 +95,9 @@ async def update_email(
                 payload={
                     "tenant_id": str(tenant_id),
                     "email_id": str(email_id),
-                    "port_call_id": str(update_data["port_call_id"]) if update_data["port_call_id"] else None,
+                    "port_call_id": str(update_data["port_call_id"])
+                    if update_data["port_call_id"]
+                    else None,
                     "user_id": str(current_user.id),
                 },
                 ip_address=request.client.host if request.client else None,

@@ -170,10 +170,14 @@ async def list_da_anomalies(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"error": {"code": "DA_NOT_FOUND", "message": "Disbursement account not found"}},
         )
-    stmt = select(Anomaly).where(
-        Anomaly.tenant_id == tenant_id,
-        Anomaly.da_id == da_id,
-    ).order_by(Anomaly.created_at.asc())
+    stmt = (
+        select(Anomaly)
+        .where(
+            Anomaly.tenant_id == tenant_id,
+            Anomaly.da_id == da_id,
+        )
+        .order_by(Anomaly.created_at.asc())
+    )
     result = await db.execute(stmt)
     anomalies = list(result.scalars().all())
     return PaginatedResponse(

@@ -32,6 +32,7 @@ UPGRADE_MESSAGES: dict[str, str] = {
     "leakage_detector": "Leakage Detector is available on Professional and Enterprise plans.",
 }
 
+
 async def require_leakage_detector(
     db: AsyncSession,
     tenant_id: uuid.UUID,

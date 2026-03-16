@@ -365,9 +365,7 @@ def export_pdf(mrv_data: dict[str, Any]) -> tuple[bytes, str]:
 
         pdf_bytes = HTML(string=html).write_pdf()
         elapsed_ms = (time.perf_counter() - t0) * 1000
-        fuel_count = len(
-            mrv_data.get("co2_emissions", {}).get("per_fuel_breakdown", [])
-        )
+        fuel_count = len(mrv_data.get("co2_emissions", {}).get("per_fuel_breakdown", []))
         logger.info(
             "Generated EU MRV PDF for report %s (%d bytes, %d fuel entries) in %.1f ms",
             mrv_data.get("report_id"),
