@@ -6,8 +6,7 @@ import sys
 
 sys.path.insert(0, ".")
 
-from sqlalchemy import select, func
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import func, select
 
 from app.database import async_session_factory
 from app.models.anomaly import Anomaly

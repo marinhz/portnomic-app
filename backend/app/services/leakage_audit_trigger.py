@@ -11,7 +11,6 @@ from sqlalchemy.orm import selectinload
 from app.models.disbursement_account import DisbursementAccount
 from app.models.email import Email
 from app.models.port_call import PortCall
-from app.models.vessel import Vessel
 from app.services.audit_service import run_audit
 from app.services.limits import PREMIUM_PLANS, get_tenant_plan
 

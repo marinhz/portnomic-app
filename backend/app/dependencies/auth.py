@@ -7,12 +7,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import PLAN_LIMITS, settings
-from app.services.limits import PREMIUM_PLANS
 from app.dependencies.database import get_db
 from app.models.role import Role
 from app.models.tenant import Tenant
 from app.models.user import User
 from app.schemas.auth import CurrentUser
+from app.services.limits import PREMIUM_PLANS
 
 bearer_scheme = HTTPBearer()
 

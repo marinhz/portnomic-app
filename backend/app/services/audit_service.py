@@ -1,7 +1,6 @@
 """AuditService for AI Leakage Detector — applies LD-001 through LD-004 and persists anomalies."""
 
 import logging
-import uuid
 from datetime import datetime
 from decimal import Decimal
 from typing import Any

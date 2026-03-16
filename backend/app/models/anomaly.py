@@ -1,8 +1,8 @@
 """Anomaly model for AI Leakage Detector — detected discrepancies from leakage audit."""
 
 import uuid
-from decimal import Decimal
 from datetime import datetime
+from decimal import Decimal
 
 from sqlalchemy import DateTime, ForeignKey, Index, Numeric, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
