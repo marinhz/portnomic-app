@@ -13,6 +13,8 @@ import type {
 } from "@/api/types";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { LinkToPortCallModal } from "@/components/LinkToPortCallModal";
 
 function StatusBadge({ status }: { status: string }) {
   const variant =
@@ -40,6 +42,7 @@ export function EmailDetail() {
   const [polling, setPolling] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showLinkModal, setShowLinkModal] = useState(false);
   const [emissionReport, setEmissionReport] =
     useState<EmissionReportDetailResponse | null>(null);
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -246,6 +249,15 @@ export function EmailDetail() {
         </div>
         <div className="flex items-center gap-3">
           <StatusBadge status={email.processing_status} />
+          {!email.port_call_id && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowLinkModal(true)}
+            >
+              Link to Port Call
+            </Button>
+          )}
           {(email.processing_status === "pending" ||
             email.processing_status === "failed") && (
             <button
@@ -278,6 +290,20 @@ export function EmailDetail() {
           )}
         </div>
       </div>
+
+      {showLinkModal && (
+        <LinkToPortCallModal
+          emailId={email.id}
+          open={showLinkModal}
+          onClose={() => setShowLinkModal(false)}
+          onLinked={() => {
+            api
+              .get<SingleResponse<EmailResponse>>(`/emails/${emailId}`)
+              .then((res) => setEmail(res.data.data))
+              .catch(() => {});
+          }}
+        />
+      )}
 
       {showDeleteConfirm && (
         <div

@@ -67,12 +67,17 @@ export type VesselResponse = {
   updated_at: string | null;
 };
 
+/** Port call creation source: "ai" (parse worker) or "manual" (API). */
+export type PortCallSource = "ai" | "manual";
+
 export type PortCallCreate = {
   vessel_id: string;
   port_id: string;
   eta?: string;
   etd?: string;
   status?: string;
+  agent_assigned_id?: string | null;
+  source?: PortCallSource;
 };
 
 export type PortCallUpdate = {
@@ -81,6 +86,8 @@ export type PortCallUpdate = {
   eta?: string;
   etd?: string;
   status?: string;
+  agent_assigned_id?: string | null;
+  source?: PortCallSource;
 };
 
 export type PortCallResponse = {
@@ -90,6 +97,8 @@ export type PortCallResponse = {
   eta: string | null;
   etd: string | null;
   status: string;
+  agent_assigned_id: string | null;
+  source: PortCallSource;
   created_at: string;
   updated_at: string | null;
 };
@@ -183,12 +192,23 @@ export type CurrentUser = {
   last_login_at?: string | null;
 };
 
+export type PortCreate = {
+  name: string;
+  code: string; // UN/LOCODE (e.g. NLRTM, SGSIN)
+  country?: string | null;
+  timezone?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+};
+
 export type PortResponse = {
   id: string;
   name: string;
-  code: string;
+  code: string; // UN/LOCODE (e.g. NLRTM, SGSIN)
   country: string | null;
   timezone: string | null;
+  latitude: number | null;
+  longitude: number | null;
   created_at: string;
 };
 
@@ -201,6 +221,7 @@ export type EmailListResponse = {
   processing_status: string;
   retry_count: number;
   created_at: string;
+  port_call_id: string | null;
 };
 
 export type EmailResponse = {
@@ -222,6 +243,21 @@ export type EmailResponse = {
 };
 
 // Tariff types
+
+export type TariffLineItemType = "per_call" | "per_ton" | "per_hour" | "fixed";
+
+export type TariffFormulaLineItem = {
+  description: string;
+  type: TariffLineItemType;
+  rate: number;
+  currency: string;
+};
+
+export type TariffFormulaConfig = {
+  items: TariffFormulaLineItem[];
+  tax_rate: number;
+  currency: string;
+};
 
 export type TariffCreate = {
   port_id: string;
@@ -301,6 +337,8 @@ export type DAListResponse = {
   created_at: string;
   approved_at: string | null;
   sent_at: string | null;
+  /** Present only when tenant has Leakage Detector (Professional/Enterprise). */
+  has_anomalies?: boolean;
 };
 
 /** Anomaly from AI Leakage Detector (GET /da/{id}/anomalies) */

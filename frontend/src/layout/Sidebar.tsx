@@ -13,6 +13,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   ShieldCheck,
+  FolderOpen,
 } from "lucide-react";
 import {
   Tooltip,
@@ -160,6 +161,12 @@ export function Sidebar({
           to="/port-calls"
           icon={Anchor}
           label="Port Calls"
+          isCollapsed={isCollapsed}
+        />
+        <NavItem
+          to="/directory/ports"
+          icon={FolderOpen}
+          label="Port Directory"
           isCollapsed={isCollapsed}
         />
         {hasDARead && (

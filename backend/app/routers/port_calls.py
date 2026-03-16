@@ -51,6 +51,7 @@ async def create_port_call(
     db: AsyncSession = Depends(get_db),
 ) -> SingleResponse[PortCallResponse]:
     port_call = await port_call_svc.create_port_call(db, tenant_id, body)
+    payload = {**body.model_dump(mode="json"), "source": body.source.value}
     await audit_svc.log_action(
         db,
         tenant_id=tenant_id,
@@ -58,7 +59,7 @@ async def create_port_call(
         action="create",
         resource_type="port_call",
         resource_id=str(port_call.id),
-        payload=body.model_dump(mode="json"),
+        payload=payload,
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
     )
@@ -104,6 +105,7 @@ async def update_port_call(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"error": {"code": "PORT_CALL_NOT_FOUND", "message": "Port call not found"}},
         )
+    payload = {**body.model_dump(exclude_unset=True, mode="json"), "source": port_call.source}
     await audit_svc.log_action(
         db,
         tenant_id=tenant_id,
@@ -111,7 +113,7 @@ async def update_port_call(
         action="update",
         resource_type="port_call",
         resource_id=str(port_call.id),
-        payload=body.model_dump(exclude_unset=True, mode="json"),
+        payload=payload,
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("user-agent"),
     )

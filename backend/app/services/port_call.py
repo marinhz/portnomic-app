@@ -60,7 +60,8 @@ async def update_port_call(
     port_call = await get_port_call(db, tenant_id, port_call_id)
     if port_call is None:
         return None
-    for field, value in data.model_dump(exclude_unset=True).items():
+    update_data = data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
         setattr(port_call, field, value)
     await db.flush()
     await db.refresh(port_call)

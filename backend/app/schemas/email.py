@@ -14,6 +14,10 @@ class EmailCreate(BaseModel):
     port_call_id: uuid.UUID | None = None
 
 
+class EmailUpdate(BaseModel):
+    port_call_id: uuid.UUID | None = None
+
+
 class EmailResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -45,3 +49,4 @@ class EmailListResponse(BaseModel):
     processing_status: str
     retry_count: int
     created_at: datetime
+    port_call_id: uuid.UUID | None = None

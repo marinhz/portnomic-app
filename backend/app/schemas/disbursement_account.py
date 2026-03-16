@@ -62,3 +62,4 @@ class DAListResponse(BaseModel):
     created_at: datetime
     approved_at: datetime | None
     sent_at: datetime | None
+    has_anomalies: bool | None = None  # Only present when tenant has Leakage Detector

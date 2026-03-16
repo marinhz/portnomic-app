@@ -16,6 +16,7 @@ Epics derived from the **Implementation Roadmap** in [SHIPFLOW_AI_Engineering_De
 | 10 | Bring Your Own AI (BYOAI) — tenant API keys & prompt management, premium only | [10-bring-your-own-ai](10-bring-your-own-ai/epic.md) | 3–4 weeks |
 | 11 | Roles & permissions redesign — module-based grouping, user-friendly labels | [11-roles-permissions-redesign](11-roles-permissions-redesign/epic.md) | 2–3 weeks |
 | 12 | AI Leakage Detector — automated expense audit, cross-reference invoices vs. Port Call data | [12-ai-leakage-detector](12-ai-leakage-detector/epic.md) | 4–5 weeks |
+| 13 | Manual Port & Port Call Management — Port Directory UI, manual Port Call wizard, Sync Status badge, Email linking | [13-manual-port-port-call-management](13-manual-port-port-call-management/epic.md) | 2–3 weeks |
 
 Each epic folder contains:
 - **epic.md** — Objective, scope, acceptance criteria, and EDD section references.

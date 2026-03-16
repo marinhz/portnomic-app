@@ -1,10 +1,12 @@
 import uuid
 from datetime import datetime, timezone
+from typing import NamedTuple
 
-from sqlalchemy import func, select
+from sqlalchemy import exists, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.models.anomaly import Anomaly
 from app.models.disbursement_account import VALID_TRANSITIONS, DisbursementAccount
 from app.models.port_call import PortCall
 from app.services.formula_engine import compute_line_items
@@ -12,19 +14,40 @@ from app.services.limits import check_da_limit, raise_if_over_limit
 from app.services.tariff import get_active_tariff
 
 
+class DAListRow(NamedTuple):
+    """DA list row with optional has_anomalies (Leakage Detector feature)."""
+
+    da: DisbursementAccount
+    has_anomalies: bool | None  # None when feature not enabled
+
+
 async def list_das(
     db: AsyncSession,
     tenant_id: uuid.UUID,
     port_call_id: uuid.UUID | None = None,
     status: str | None = None,
+    has_anomalies: bool | None = None,
+    include_has_anomalies: bool = False,
     page: int = 1,
     per_page: int = 20,
-) -> tuple[list[DisbursementAccount], int]:
+) -> tuple[list[DAListRow], int]:
+    """List DAs with optional has_anomalies filter and field.
+
+    When include_has_anomalies is True, each row includes has_anomalies.
+    When has_anomalies is True, filter to DAs with at least one Anomaly.
+    """
     base = select(DisbursementAccount).where(DisbursementAccount.tenant_id == tenant_id)
     if port_call_id:
         base = base.where(DisbursementAccount.port_call_id == port_call_id)
     if status:
         base = base.where(DisbursementAccount.status == status)
+
+    anomaly_exists = exists().where(
+        Anomaly.tenant_id == tenant_id,
+        Anomaly.da_id == DisbursementAccount.id,
+    )
+    if has_anomalies:
+        base = base.where(anomaly_exists)
 
     count_q = select(func.count()).select_from(base.subquery())
     total = (await db.execute(count_q)).scalar_one()
@@ -35,7 +58,27 @@ async def list_das(
         .limit(per_page)
     )
     result = await db.execute(q)
-    return list(result.scalars().all()), total
+    das = list(result.scalars().all())
+
+    if not include_has_anomalies:
+        return [DAListRow(da=d, has_anomalies=None) for d in das], total
+
+    # Compute has_anomalies for each DA
+    da_ids = [d.id for d in das]
+    anomaly_counts = await db.execute(
+        select(Anomaly.da_id, func.count(Anomaly.id))
+        .where(
+            Anomaly.tenant_id == tenant_id,
+            Anomaly.da_id.in_(da_ids),
+        )
+        .group_by(Anomaly.da_id)
+    )
+    da_has_anomalies = {row[0]: row[1] > 0 for row in anomaly_counts.all()}
+    rows = [
+        DAListRow(da=d, has_anomalies=da_has_anomalies.get(d.id, False))
+        for d in das
+    ]
+    return rows, total
 
 
 async def get_da(

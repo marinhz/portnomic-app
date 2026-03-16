@@ -16,6 +16,7 @@
 | 12.5 Discrepancy UI (DA workspace) | Frontend | react-dev, react-router-v7, tailwind-design-system |
 | 12.6 High-risk invoice toast alerts | Frontend | react-dev, tailwind-design-system |
 | 12.7 Sidebar icon & feature gating (Starter: icon only) | Frontend | react-dev, tailwind-design-system |
+| 12.8 DA List: Leakage Detector filter & icon | Frontend | react-dev, tailwind-design-system |
 
 ---
 

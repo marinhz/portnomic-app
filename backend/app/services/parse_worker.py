@@ -16,6 +16,7 @@ from app.models.tenant_prompt_override import ParserType
 from app.models.vessel import Vessel
 from app.schemas.ai import ParsedEmailResult
 from app.schemas.emission import EXTRACTION_SCHEMA_VERSION, EmissionExtractionResult
+from app.services import audit as audit_svc
 from app.services.carbon_price import get_current_price_eur
 from app.services.disbursement_account import generate_da
 from app.services.emission_anomaly import detect_and_apply_anomalies
@@ -123,6 +124,7 @@ async def _create_or_update_port_call(
         eta=eta,
         etd=etd,
         status="scheduled",
+        source="ai",
     )
     db.add(port_call)
     await db.flush()
@@ -373,6 +375,17 @@ async def process_email(
     port_call_id = await _create_or_update_port_call(
         db, email.tenant_id, vessel_id, port_id, result
     )
+
+    if port_call_id:
+        await audit_svc.log_action(
+            db,
+            tenant_id=email.tenant_id,
+            user_id=None,
+            action="create",
+            resource_type="port_call",
+            resource_id=str(port_call_id),
+            payload={"source": "ai"},
+        )
 
     email.ai_raw_output = result_dict
     email.processing_status = "completed"

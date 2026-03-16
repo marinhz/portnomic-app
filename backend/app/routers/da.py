@@ -37,15 +37,50 @@ _background_tasks: set[asyncio.Task] = set()  # prevent GC of fire-and-forget ta
 async def list_das(
     port_call_id: uuid.UUID | None = None,
     da_status: str | None = None,
+    has_anomalies: bool | None = None,
     page: int = 1,
     per_page: int = 20,
     current_user: CurrentUser = Depends(RequirePermission("da:read")),
     tenant_id: uuid.UUID = Depends(get_tenant_id),
     db: AsyncSession = Depends(get_db),
 ) -> PaginatedResponse[DAListResponse]:
-    das, total = await da_svc.list_das(db, tenant_id, port_call_id, da_status, page, per_page)
+    leakage_enabled = current_user.leakage_detector_enabled or current_user.is_platform_admin
+    if has_anomalies is not None and not leakage_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "upgrade_required",
+                "message": "Leakage Detector filter is available on Professional and Enterprise plans.",
+                "limit_type": "leakage_detector",
+            },
+        )
+    rows, total = await da_svc.list_das(
+        db,
+        tenant_id,
+        port_call_id=port_call_id,
+        status=da_status,
+        has_anomalies=has_anomalies if has_anomalies else None,
+        include_has_anomalies=leakage_enabled,
+        page=page,
+        per_page=per_page,
+    )
+    data = [
+        DAListResponse(
+            id=row.da.id,
+            port_call_id=row.da.port_call_id,
+            version=row.da.version,
+            type=row.da.type,
+            status=row.da.status,
+            currency=row.da.currency,
+            created_at=row.da.created_at,
+            approved_at=row.da.approved_at,
+            sent_at=row.da.sent_at,
+            has_anomalies=row.has_anomalies,
+        )
+        for row in rows
+    ]
     return PaginatedResponse(
-        data=[DAListResponse.model_validate(d) for d in das],
+        data=data,
         meta=PaginationMeta(total=total, page=page, per_page=per_page),
     )
 

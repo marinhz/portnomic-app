@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.port import Port
@@ -9,11 +9,25 @@ from app.services.cache import cache_delete_pattern, cache_get, cache_set, make_
 
 
 async def list_ports(
-    db: AsyncSession, tenant_id: uuid.UUID, page: int = 1, per_page: int = 20
+    db: AsyncSession,
+    tenant_id: uuid.UUID,
+    page: int = 1,
+    per_page: int = 20,
+    search: str | None = None,
 ) -> tuple[list[Port], int]:
     base = select(Port).where((Port.tenant_id == tenant_id) | (Port.tenant_id.is_(None)))
+    if search and search.strip():
+        term = f"%{search.strip()}%"
+        base = base.where(
+            or_(
+                Port.name.ilike(term),
+                Port.code.ilike(term),
+                Port.country.ilike(term),
+            )
+        )
+
     count_result = await db.execute(select(func.count()).select_from(base.subquery()))
-    total = count_result.scalar() or 0
+    total = count_result.scalar_one() or 0
 
     result = await db.execute(
         base.order_by(Port.name).offset((page - 1) * per_page).limit(per_page)

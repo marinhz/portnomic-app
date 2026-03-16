@@ -8,6 +8,7 @@ import type {
   DAListResponse,
 } from "@/api/types";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/auth/AuthContext";
 
 const DA_STATUS_COLORS: Record<string, string> = {
@@ -121,6 +122,14 @@ export function PortCallDetail() {
               >
                 {portCall.status}
               </span>
+            </dd>
+          </div>
+          <div>
+            <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">Sync</dt>
+            <dd className="mt-1">
+              <Badge variant={portCall.source === "ai" ? "info" : "secondary"}>
+                {portCall.source === "ai" ? "Auto-generated" : "Manual"}
+              </Badge>
             </dd>
           </div>
           <div>

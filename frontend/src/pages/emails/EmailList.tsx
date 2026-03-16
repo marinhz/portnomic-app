@@ -6,6 +6,7 @@ import {
   XCircle,
   AlertCircle,
   MinusCircle,
+  Link2,
 } from "lucide-react";
 import { toast } from "sonner";
 import api, { ApiError } from "@/api/client";
@@ -16,6 +17,7 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { LinkToPortCallModal } from "@/components/LinkToPortCallModal";
 
 function StatusBadge({ status }: { status: string }) {
   const { variant, Icon } =
@@ -36,36 +38,60 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-const columns: Column<EmailListResponse>[] = [
-  {
-    key: "subject",
-    header: "Subject",
-    render: (value) => (
-      <span className="max-w-xs truncate block">{String(value ?? "—")}</span>
-    ),
-  },
-  { key: "sender", header: "From" },
-  {
-    key: "processing_status",
-    header: "Status",
-    render: (value) => <StatusBadge status={String(value)} />,
-  },
-  {
-    key: "retry_count",
-    header: "Retries",
-  },
-  {
-    key: "received_at",
-    header: "Received",
-    render: (value) =>
-      value ? new Date(String(value)).toLocaleString() : "—",
-  },
-  {
-    key: "created_at",
-    header: "Ingested",
-    render: (value) => new Date(String(value)).toLocaleString(),
-  },
-];
+function buildColumns(
+  onLinkClick: (email: EmailListResponse) => void
+): Column<EmailListResponse>[] {
+  return [
+    {
+      key: "subject",
+      header: "Subject",
+      render: (value) => (
+        <span className="max-w-xs truncate block">{String(value ?? "—")}</span>
+      ),
+    },
+    { key: "sender", header: "From" },
+    {
+      key: "processing_status",
+      header: "Status",
+      render: (value) => <StatusBadge status={String(value)} />,
+    },
+    {
+      key: "retry_count",
+      header: "Retries",
+    },
+    {
+      key: "received_at",
+      header: "Received",
+      render: (value) =>
+        value ? new Date(String(value)).toLocaleString() : "—",
+    },
+    {
+      key: "created_at",
+      header: "Ingested",
+      render: (value) => new Date(String(value)).toLocaleString(),
+    },
+    {
+      key: "port_call_id",
+      header: "Port Call",
+      render: (value, item) =>
+        value ? (
+          <span className="text-muted-foreground text-xs">Linked</span>
+        ) : (
+          <div onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 text-muted-foreground hover:text-foreground"
+              onClick={() => onLinkClick(item)}
+            >
+              <Link2 className="size-3.5" />
+              Link
+            </Button>
+          </div>
+        ),
+    },
+  ];
+}
 
 export function EmailList() {
   const navigate = useNavigate();
@@ -76,6 +102,7 @@ export function EmailList() {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [syncing, setSyncing] = useState(false);
+  const [linkModalEmail, setLinkModalEmail] = useState<EmailListResponse | null>(null);
 
   const fetchEmails = () => {
     setLoading(true);
@@ -162,11 +189,20 @@ export function EmailList() {
       <div className="overflow-hidden rounded-lg border bg-card shadow-sm">
         <DataTable
           data={emails}
-          columns={columns}
+          columns={buildColumns((email) => setLinkModalEmail(email))}
           keyExtractor={(e) => e.id}
           onRowClick={(e) => navigate(`/emails/${e.id}`)}
         />
       </div>
+
+      {linkModalEmail && (
+        <LinkToPortCallModal
+          emailId={linkModalEmail.id}
+          open={!!linkModalEmail}
+          onClose={() => setLinkModalEmail(null)}
+          onLinked={fetchEmails}
+        />
+      )}
 
       {totalPages > 1 && (
         <div className="mt-4">

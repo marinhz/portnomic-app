@@ -10,6 +10,7 @@ import { VesselForm } from "./pages/vessels/VesselForm";
 import { VesselDetail } from "./pages/vessels/VesselDetail";
 import { PortCallList } from "./pages/port-calls/PortCallList";
 import { PortCallForm } from "./pages/port-calls/PortCallForm";
+import { PortCallWizard } from "./pages/port-calls/PortCallWizard";
 import { PortCallDetail } from "./pages/port-calls/PortCallDetail";
 import { DAList } from "./pages/da/DAList";
 import { DADetail } from "./pages/da/DADetail";
@@ -32,6 +33,8 @@ import { EmissionsDashboard } from "./pages/emissions/EmissionsDashboard";
 import { EmissionsReportDetail } from "./pages/emissions/EmissionsReportDetail";
 import { LeakageDetectorPage } from "./pages/leakage/LeakageDetectorPage";
 import { PlatformAdminRoute } from "./auth/PlatformAdminRoute";
+import { PortDirectory } from "./pages/directory/PortDirectory";
+import { TariffConfig } from "./pages/directory/TariffConfig";
 
 function RootLayout() {
   return (
@@ -63,7 +66,7 @@ export const router = createBrowserRouter([
               { path: "vessels/:vesselId", Component: VesselDetail },
               { path: "vessels/:vesselId/edit", Component: VesselForm },
               { path: "port-calls", Component: PortCallList },
-              { path: "port-calls/new", Component: PortCallForm },
+              { path: "port-calls/new", Component: PortCallWizard },
               { path: "port-calls/:portCallId", Component: PortCallDetail },
               { path: "port-calls/:portCallId/edit", Component: PortCallForm },
               { path: "da", Component: DAList },
@@ -74,6 +77,8 @@ export const router = createBrowserRouter([
               { path: "emissions", Component: EmissionsDashboard },
               { path: "emissions/reports/:id", Component: EmissionsReportDetail },
               { path: "leakage-detector", Component: LeakageDetectorPage },
+              { path: "directory/ports", Component: PortDirectory },
+              { path: "directory/tariffs", Component: TariffConfig },
               { path: "settings/profile", Component: ProfilePage },
               { path: "settings/integrations", Component: IntegrationsPage },
               { path: "settings/billing", Component: Billing },

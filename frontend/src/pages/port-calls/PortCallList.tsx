@@ -9,6 +9,7 @@ import type {
 import { DataTable, type Column } from "@/components/DataTable";
 import { Pagination } from "@/components/Pagination";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { Badge } from "@/components/ui/badge";
 
 const PORT_CALL_STATUSES = [
   "Planned",
@@ -91,6 +92,13 @@ export function PortCallList() {
       key: "status",
       header: "Status",
       render: (value) => <StatusBadge status={String(value)} />,
+    },
+    {
+      key: "source",
+      header: "Sync",
+      render: (value) => (
+        <SyncStatusBadge source={(value ?? "manual") as "ai" | "manual"} />
+      ),
     },
     {
       key: "created_at",
@@ -176,6 +184,12 @@ export function PortCallList() {
       )}
     </div>
   );
+}
+
+function SyncStatusBadge({ source }: { source: "ai" | "manual" }) {
+  const label = source === "ai" ? "Auto-generated" : "Manual";
+  const variant = source === "ai" ? "info" : "secondary";
+  return <Badge variant={variant}>{label}</Badge>;
 }
 
 function StatusBadge({ status }: { status: string }) {

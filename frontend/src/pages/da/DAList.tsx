@@ -1,9 +1,16 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router";
+import { AlertTriangle } from "lucide-react";
 import api, { ApiError } from "@/api/client";
 import type { PaginatedResponse, DAListResponse } from "@/api/types";
+import { useAuth } from "@/auth/AuthContext";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Pagination } from "@/components/Pagination";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200",
@@ -20,6 +27,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export function DAList() {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [das, setDAs] = useState<DAListResponse[]>([]);
   const [total, setTotal] = useState(0);
@@ -28,11 +36,21 @@ export function DAList() {
 
   const page = Number(searchParams.get("page") ?? "1");
   const statusFilter = searchParams.get("status") ?? "";
+  const hasLeakageFilter = searchParams.get("has_anomalies") === "true";
+
+  const leakageDetectorEnabled =
+    user?.leakage_detector_enabled ?? user?.is_platform_admin ?? false;
+  const hasDARead = user?.permissions?.includes("da:read") ?? false;
+  const showLeakageUI = leakageDetectorEnabled && hasDARead;
 
   useEffect(() => {
     setLoading(true);
-    const params: Record<string, string | number> = { page, per_page: 20 };
+    const params: Record<string, string | number | boolean> = {
+      page,
+      per_page: 20,
+    };
     if (statusFilter) params.da_status = statusFilter;
+    if (hasLeakageFilter) params.has_anomalies = true;
 
     api
       .get<PaginatedResponse<DAListResponse>>("/da", { params })
@@ -44,7 +62,7 @@ export function DAList() {
         setError(err instanceof ApiError ? err.message : "Failed to load DAs");
       })
       .finally(() => setLoading(false));
-  }, [page, statusFilter]);
+  }, [page, statusFilter, hasLeakageFilter]);
 
   function handleStatusFilter(status: string) {
     const params = new URLSearchParams(searchParams);
@@ -52,6 +70,17 @@ export function DAList() {
       params.set("status", status);
     } else {
       params.delete("status");
+    }
+    params.set("page", "1");
+    setSearchParams(params);
+  }
+
+  function handleLeakageFilter(active: boolean) {
+    const params = new URLSearchParams(searchParams);
+    if (active) {
+      params.set("has_anomalies", "true");
+    } else {
+      params.delete("has_anomalies");
     }
     params.set("page", "1");
     setSearchParams(params);
@@ -71,7 +100,7 @@ export function DAList() {
         </h1>
       </div>
 
-      <div className="mb-4 flex gap-3">
+      <div className="mb-4 flex flex-wrap gap-3">
         {["", "draft", "pending_approval", "approved", "sent"].map((s) => (
           <button
             key={s}
@@ -85,13 +114,31 @@ export function DAList() {
             {s ? STATUS_LABELS[s] ?? s : "All"}
           </button>
         ))}
+        {showLeakageUI && (
+          <button
+            onClick={() => handleLeakageFilter(!hasLeakageFilter)}
+            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+              hasLeakageFilter
+                ? "bg-primary text-primary-foreground"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+            }`}
+          >
+            Has Leakage
+          </button>
+        )}
       </div>
 
       {das.length === 0 ? (
         <div className="rounded-lg border border-slate-200 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900">
-          <p className="text-slate-500 dark:text-slate-400">No disbursement accounts found.</p>
+          <p className="text-slate-500 dark:text-slate-400">
+            {hasLeakageFilter
+              ? "No DAs with Leakage Detector findings."
+              : "No disbursement accounts found."}
+          </p>
           <p className="mt-2 text-sm text-slate-400 dark:text-slate-500">
-            Generate a DA from a port call to get started.
+            {hasLeakageFilter
+              ? "Try removing the Has Leakage filter to see all DAs."
+              : "Generate a DA from a port call to get started."}
           </p>
         </div>
       ) : (
@@ -100,6 +147,11 @@ export function DAList() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/80">
+                  {showLeakageUI && (
+                    <th className="w-10 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      <span className="sr-only">Leakage</span>
+                    </th>
+                  )}
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Type
                   </th>
@@ -127,6 +179,27 @@ export function DAList() {
                     key={da.id}
                     className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
                   >
+                    {showLeakageUI && (
+                      <td className="px-4 py-3 text-center">
+                        {da.has_anomalies ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="inline-flex items-center justify-center">
+                                <AlertTriangle
+                                  className="size-4 text-amber-600 dark:text-amber-400"
+                                  aria-hidden
+                                />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                              Has Leakage Detector findings
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <span className="inline-block size-4" aria-hidden />
+                        )}
+                      </td>
+                    )}
                     <td className="px-4 py-3 text-sm font-medium capitalize text-slate-800 dark:text-slate-200">
                       {da.type}
                     </td>
