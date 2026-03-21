@@ -11,6 +11,7 @@ import {
   AlertCircle,
   MinusCircle,
   Cable,
+  Info,
 } from "lucide-react";
 
 const SHOW_OUTLOOK_CONNECT =
@@ -38,6 +39,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const PROVIDER_LABELS: Record<string, string> = {
   gmail: "Gmail",
@@ -264,10 +270,27 @@ export function IntegrationsPage() {
         >
           Full sync
         </Button>
-        <Button variant="outline" onClick={() => handleConnect("gmail")}>
-          <Mail className="size-4" />
-          Connect Gmail
-        </Button>
+        <div className="inline-flex items-center gap-1.5">
+          <Button variant="outline" onClick={() => handleConnect("gmail")}>
+            <Mail className="size-4" />
+            Connect Gmail
+          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span
+                className="inline-flex cursor-help text-muted-foreground hover:text-foreground"
+                aria-label="Gmail connection info"
+              >
+                <Info className="size-4" />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              Read-only access for vessel email parsing. Your data is encrypted
+              and never shared. Verification with Google in progress for a
+              trusted experience.
+            </TooltipContent>
+          </Tooltip>
+        </div>
         {SHOW_OUTLOOK_CONNECT && (
           <Button variant="outline" onClick={() => handleConnect("outlook")}>
             <Inbox className="size-4" />
@@ -282,6 +305,15 @@ export function IntegrationsPage() {
           {showImapForm ? "Cancel IMAP" : "Add IMAP"}
         </Button>
       </div>
+
+      {/* Gmail privacy note */}
+      <Alert className="mb-6">
+        <Info className="size-4" />
+        <AlertDescription>
+          <strong>Gmail:</strong> We use read-only access to parse
+          vessel-related emails. Your data is encrypted and never shared.
+        </AlertDescription>
+      </Alert>
 
       {/* IMAP form */}
       {showImapForm && (

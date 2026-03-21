@@ -7,6 +7,7 @@ from openai import (
     APIConnectionError,
     APITimeoutError,
     AsyncOpenAI,
+    AuthenticationError,
     RateLimitError,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
