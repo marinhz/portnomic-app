@@ -8,9 +8,12 @@ from app.dependencies.rbac import RequirePermission
 from app.dependencies.tenant import get_tenant_id
 from app.schemas.auth import CurrentUser
 from app.schemas.common import ErrorResponse, PaginatedResponse, PaginationMeta, SingleResponse
+from app.schemas.discrepancy import AuditReportResponse, DiscrepancyResponse
 from app.schemas.port_call import PortCallCreate, PortCallResponse, PortCallUpdate
 from app.services import audit as audit_svc
+from app.services import discrepancy as discrepancy_svc
 from app.services import port_call as port_call_svc
+from app.services.sentinel import AuditEngine
 
 router = APIRouter(prefix="/api/v1/port-calls", tags=["port-calls"])
 
@@ -64,6 +67,61 @@ async def create_port_call(
         user_agent=request.headers.get("user-agent"),
     )
     return SingleResponse(data=PortCallResponse.model_validate(port_call))
+
+
+@router.post(
+    "/{port_call_id}/audit",
+    response_model=SingleResponse[AuditReportResponse],
+    status_code=status.HTTP_200_OK,
+    responses={404: {"model": ErrorResponse}},
+)
+async def run_sentinel_audit(
+    port_call_id: uuid.UUID,
+    current_user: CurrentUser = Depends(RequirePermission("port_call:read")),
+    tenant_id: uuid.UUID = Depends(get_tenant_id),
+    db: AsyncSession = Depends(get_db),
+) -> SingleResponse[AuditReportResponse]:
+    """Run Sentinel Triple-Check audit on a port call."""
+    port_call = await port_call_svc.get_port_call(db, tenant_id, port_call_id)
+    if port_call is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": {"code": "PORT_CALL_NOT_FOUND", "message": "Port call not found"}},
+        )
+    engine = AuditEngine(db, tenant_id)
+    report = await engine.compare_events(port_call_id)
+    return SingleResponse(
+        data=AuditReportResponse(
+            discrepancies=report.discrepancies,
+            total_count=report.total_count,
+            by_severity=report.by_severity,
+            by_rule=report.by_rule,
+            rules_executed=report.rules_executed,
+        )
+    )
+
+
+@router.get(
+    "/{port_call_id}/discrepancies",
+    response_model=SingleResponse[list[DiscrepancyResponse]],
+    responses={404: {"model": ErrorResponse}},
+)
+async def list_port_call_discrepancies(
+    port_call_id: uuid.UUID,
+    current_user: CurrentUser = Depends(RequirePermission("port_call:read")),
+    tenant_id: uuid.UUID = Depends(get_tenant_id),
+    db: AsyncSession = Depends(get_db),
+) -> SingleResponse[list[DiscrepancyResponse]]:
+    port_call = await port_call_svc.get_port_call(db, tenant_id, port_call_id)
+    if port_call is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": {"code": "PORT_CALL_NOT_FOUND", "message": "Port call not found"}},
+        )
+    discrepancies = await discrepancy_svc.list_discrepancies_for_port_call(
+        db, tenant_id, port_call_id
+    )
+    return SingleResponse(data=[DiscrepancyResponse.model_validate(d) for d in discrepancies])
 
 
 @router.get(

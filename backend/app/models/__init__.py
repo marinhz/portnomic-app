@@ -1,5 +1,6 @@
 from app.models.anomaly import Anomaly
 from app.models.audit_log import AuditLog
+from app.models.discrepancy import Discrepancy
 from app.models.base import Base
 from app.models.disbursement_account import DisbursementAccount
 from app.models.email import Email
@@ -19,6 +20,7 @@ from app.models.vessel import Vessel
 __all__ = [
     "Anomaly",
     "Base",
+    "Discrepancy",
     "Tenant",
     "User",
     "Role",

@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useLoaderData, useParams } from "react-router";
 import api, { ApiError } from "@/api/client";
 import type {
-  SingleResponse,
   PaginatedResponse,
   PortCallResponse,
   DAListResponse,
 } from "@/api/types";
+import type { PortCallDetailLoaderData } from "./loaders";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Badge } from "@/components/ui/badge";
+import { SentinelAlert } from "@/components/sentinel";
 import { useAuth } from "@/auth/AuthContext";
 
 const DA_STATUS_COLORS: Record<string, string> = {
@@ -21,8 +22,10 @@ const DA_STATUS_COLORS: Record<string, string> = {
 export function PortCallDetail() {
   const { portCallId } = useParams();
   const { user } = useAuth();
-  const [portCall, setPortCall] = useState<PortCallResponse | null>(null);
+  const { portCall, discrepancies, discrepanciesError } =
+    useLoaderData() as PortCallDetailLoaderData;
   const [das, setDAs] = useState<DAListResponse[]>([]);
+  const [discrepanciesDismissed, setDiscrepanciesDismissed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,36 +33,22 @@ export function PortCallDetail() {
   const hasDAWrite = user?.permissions.includes("da:write") ?? false;
 
   useEffect(() => {
-    if (!portCallId) return;
-    const promises: Promise<void>[] = [
-      api
-        .get<SingleResponse<PortCallResponse>>(`/port-calls/${portCallId}`)
-        .then((res) => setPortCall(res.data.data)),
-    ];
-    if (hasDARead) {
-      promises.push(
-        api
-          .get<PaginatedResponse<DAListResponse>>("/da", {
-            params: { port_call_id: portCallId, per_page: 50 },
-          })
-          .then((res) => setDAs(res.data.data)),
-      );
+    if (!portCallId || !hasDARead) {
+      setLoading(false);
+      return;
     }
-    Promise.all(promises)
+    api
+      .get<PaginatedResponse<DAListResponse>>("/da", {
+        params: { port_call_id: portCallId, per_page: 50 },
+      })
+      .then((res) => setDAs(res.data.data))
       .catch((err) => {
         setError(
-          err instanceof ApiError ? err.message : "Failed to load port call",
+          err instanceof ApiError ? err.message : "Failed to load DAs"
         );
       })
       .finally(() => setLoading(false));
   }, [portCallId, hasDARead]);
-
-  if (loading) return <LoadingSpinner />;
-  if (error)
-    return (
-      <div className="rounded-lg bg-red-50 p-4 text-red-700 dark:bg-red-950/50 dark:text-red-300">{error}</div>
-    );
-  if (!portCall) return null;
 
   const statusColorMap: Record<string, string> = {
     planned: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
@@ -72,8 +61,36 @@ export function PortCallDetail() {
     statusColorMap[portCall.status.toLowerCase()] ??
     "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200";
 
+  const showSentinelAlert =
+    !discrepanciesDismissed &&
+    discrepancies.length > 0;
+
   return (
     <div>
+      <div
+        className="min-h-0"
+        aria-live="polite"
+        aria-label={showSentinelAlert ? "Sentinel alerts section" : undefined}
+      >
+        {showSentinelAlert && (
+          <div className="mb-6">
+            <SentinelAlert
+              discrepancies={discrepancies}
+              portCallId={portCallId!}
+              onDismiss={() => setDiscrepanciesDismissed(true)}
+            />
+          </div>
+        )}
+        {discrepanciesError && (
+          <div
+            className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200"
+            role="status"
+          >
+            Sentinel alerts unavailable: {discrepanciesError}
+          </div>
+        )}
+      </div>
+
       <div className="mb-6 flex items-center justify-between">
         <div>
           <Link
@@ -86,12 +103,20 @@ export function PortCallDetail() {
             Port Call Details
           </h1>
         </div>
-        <Link
-          to={`/port-calls/${portCallId}/edit`}
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          Edit Port Call
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            to={`/port-calls/${portCallId}/audit`}
+            className="text-sm font-medium text-mint-500 hover:text-mint-400 dark:text-mint-400 dark:hover:text-mint-300"
+          >
+            Sentinel Audit
+          </Link>
+          <Link
+            to={`/port-calls/${portCallId}/edit`}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Edit Port Call
+          </Link>
+        </div>
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
@@ -176,7 +201,11 @@ export function PortCallDetail() {
               </div>
             )}
           </div>
-          {das.length === 0 ? (
+          {loading ? (
+            <LoadingSpinner />
+          ) : error ? (
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          ) : das.length === 0 ? (
             <p className="text-sm text-slate-500 dark:text-slate-400">
               No disbursement accounts for this port call.
             </p>

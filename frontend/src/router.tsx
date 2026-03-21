@@ -12,6 +12,11 @@ import { PortCallList } from "./pages/port-calls/PortCallList";
 import { PortCallForm } from "./pages/port-calls/PortCallForm";
 import { PortCallWizard } from "./pages/port-calls/PortCallWizard";
 import { PortCallDetail } from "./pages/port-calls/PortCallDetail";
+import { PortCallAudit } from "./pages/port-calls/PortCallAudit";
+import {
+  portCallDetailLoader,
+  portCallAuditLoader,
+} from "./pages/port-calls/loaders";
 import { DAList } from "./pages/da/DAList";
 import { DADetail } from "./pages/da/DADetail";
 import { DAGenerate } from "./pages/da/DAGenerate";
@@ -67,7 +72,16 @@ export const router = createBrowserRouter([
               { path: "vessels/:vesselId/edit", Component: VesselForm },
               { path: "port-calls", Component: PortCallList },
               { path: "port-calls/new", Component: PortCallWizard },
-              { path: "port-calls/:portCallId", Component: PortCallDetail },
+              {
+                path: "port-calls/:portCallId",
+                Component: PortCallDetail,
+                loader: portCallDetailLoader,
+              },
+              {
+                path: "port-calls/:portCallId/audit",
+                Component: PortCallAudit,
+                loader: portCallAuditLoader,
+              },
               { path: "port-calls/:portCallId/edit", Component: PortCallForm },
               { path: "da", Component: DAList },
               { path: "da/generate", Component: DAGenerate },

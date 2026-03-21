@@ -202,6 +202,26 @@ export function LoginPage() {
             </>
           )}
         </div>
+
+        <footer className="mt-8 flex justify-center gap-3 text-xs text-white/60">
+          <a
+            href="https://portnomic.com/privacy-policy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-colors hover:text-mint-300/90"
+          >
+            Privacy Policy
+          </a>
+          <span aria-hidden>·</span>
+          <a
+            href="https://support.google.com/cloud/answer/13807376?hl=en-GB"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition-colors hover:text-mint-300/90"
+          >
+            App Homepage & verification
+          </a>
+        </footer>
       </div>
     </div>
   );

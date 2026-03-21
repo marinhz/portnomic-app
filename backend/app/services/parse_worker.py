@@ -23,6 +23,7 @@ from app.services.emission_anomaly import detect_and_apply_anomalies
 from app.services.emission_calculator import calculate_emissions, estimate_eua
 from app.services.emission_parser import EMISSION_PROMPT_VERSION, parse_emission_content
 from app.services.leakage_audit_trigger import trigger_leakage_audit_after_parse
+from app.services.sentinel_audit_trigger import trigger_sentinel_audit_after_parse
 from app.services.limits import check_da_limit
 from app.services.llm_client import LlmConfigError, is_transient_error, parse_email_content
 from app.services.prompts import get_prompt
@@ -278,6 +279,23 @@ async def _process_emission_email(
         job.id,
     )
 
+    # Sentinel audit trigger (Task 14.6): run for Noon Report documents
+    if emission_report.port_call_id:
+        try:
+            await trigger_sentinel_audit_after_parse(
+                db,
+                email,
+                emission_report.port_call_id,
+                emission_report=emission_report,
+            )
+        except Exception as exc:
+            logger.warning(
+                "Sentinel audit failed for emission email %s (non-fatal): %s",
+                email.id,
+                exc,
+                exc_info=True,
+            )
+
 
 async def process_email(
     db: AsyncSession,
@@ -453,6 +471,19 @@ async def process_email(
         except Exception as exc:
             logger.warning(
                 "Leakage audit failed for email %s (non-fatal): %s",
+                email_id,
+                exc,
+                exc_info=True,
+            )
+
+        # Sentinel audit trigger (Task 14.6): run for DA/SOF/Noon documents
+        try:
+            await trigger_sentinel_audit_after_parse(
+                db, email, port_call_id, da=da
+            )
+        except Exception as exc:
+            logger.warning(
+                "Sentinel audit failed for email %s (non-fatal): %s",
                 email_id,
                 exc,
                 exc_info=True,

@@ -40,6 +40,7 @@ dependencies = [
     "opentelemetry-instrumentation-httpx>=0.41b0",
     "reportlab>=4.0",
     "weasyprint>=62.0",
+    "websockets>=14.0",
 ]
 
 [project.optional-dependencies]

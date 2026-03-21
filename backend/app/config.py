@@ -104,6 +104,13 @@ class Settings(BaseSettings):
     cb_recovery_timeout: int = 30
     cb_half_open_max_calls: int = 3
 
+    # AIS (aisstream.io) — berth arrival/departure for Sentinel Rule S-002
+    aisstream_api_key: str = ""
+    aisstream_url: str = "wss://stream.aisstream.io/v0/stream"
+    aisstream_collect_timeout_seconds: int = 60
+    aisstream_cache_ttl_seconds: int = 300  # 5 min cache per vessel+port
+    aisstream_berth_speed_threshold_knots: float = 0.5  # Sog < this = at berth
+
     # Carbon price (EUA) for C-Engine EU ETS cost projection
     carbon_price_api_url: str = ""
     carbon_price_api_key: str = ""

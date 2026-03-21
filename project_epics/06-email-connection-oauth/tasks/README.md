@@ -14,5 +14,7 @@
 | 6.10 | [Vessel-only email sync with auto-parse once and manual retry](task-10-vessel-only-sync-auto-parse-once.md) |
 | 6.11 | [Admin delete email from UI](task-11-admin-delete-email-ui.md) |
 | 6.12 | [Custom SMTP: better error handling, test connection, hide Outlook](task-12-custom-smtp-error-handling-test-connection-hide-outlook.md) |
+| 6.13 | [Google OAuth App Verification](task-13-google-oauth-app-verification.md) |
+| 6.14 | [Add Privacy Policy and Google App Homepage links to login page](task-14-login-page-google-app-homepage-link.md) |
 
 [← Back to Epic 6](../epic.md)

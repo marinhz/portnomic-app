@@ -23,6 +23,20 @@ export type SingleResponse<T> = {
   data: T;
 };
 
+/** Sentinel discrepancy from GET /port-calls/{id}/discrepancies */
+export type DiscrepancyResponse = {
+  id: string;
+  tenant_id: string;
+  port_call_id: string;
+  severity: string;
+  description: string;
+  estimated_loss: string | null;
+  source_documents: string[];
+  rule_id: string | null;
+  raw_evidence: Record<string, unknown> | null;
+  created_at: string;
+};
+
 export type LoginRequest = {
   email: string;
   password: string;
@@ -194,7 +208,7 @@ export type CurrentUser = {
 
 export type PortCreate = {
   name: string;
-  code: string; // UN/LOCODE (e.g. NLRTM, SGSIN)
+  code: string;
   country?: string | null;
   timezone?: string | null;
   latitude?: number | null;
@@ -204,7 +218,7 @@ export type PortCreate = {
 export type PortResponse = {
   id: string;
   name: string;
-  code: string; // UN/LOCODE (e.g. NLRTM, SGSIN)
+  code: string;
   country: string | null;
   timezone: string | null;
   latitude: number | null;
@@ -337,7 +351,6 @@ export type DAListResponse = {
   created_at: string;
   approved_at: string | null;
   sent_at: string | null;
-  /** Present only when tenant has Leakage Detector (Professional/Enterprise). */
   has_anomalies?: boolean;
 };
 
