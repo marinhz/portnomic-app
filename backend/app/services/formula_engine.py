@@ -94,7 +94,7 @@ def compute_line_items(
                     "description": pli.get("description", "Parsed item"),
                     "quantity": pli.get("quantity", 1) or 1,
                     "unit_price": pli.get("unit_price", pli.get("amount", 0)) or 0,
-                    "amount": round(float(pli.get("amount", 0)), 2),
+                    "amount": round(float(pli.get("amount") or 0), 2),
                     "currency": pli.get("currency", default_currency),
                 }
             )

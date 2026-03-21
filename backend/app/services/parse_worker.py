@@ -390,18 +390,20 @@ async def process_email(
 
     vessel_id = await _resolve_vessel(db, email.tenant_id, result)
     port_id = await _resolve_port(db, email.tenant_id, result)
-    port_call_id = await _create_or_update_port_call(
+    parsed_port_call_id = await _create_or_update_port_call(
         db, email.tenant_id, vessel_id, port_id, result
     )
 
-    if port_call_id:
+    # Preserve manual-upload port_call_id; only overwrite when email had no association
+    port_call_id = email.port_call_id if email.port_call_id else parsed_port_call_id
+    if parsed_port_call_id and not email.port_call_id:
         await audit_svc.log_action(
             db,
             tenant_id=email.tenant_id,
             user_id=None,
             action="create",
             resource_type="port_call",
-            resource_id=str(port_call_id),
+            resource_id=str(parsed_port_call_id),
             payload={"source": "ai"},
         )
 
@@ -409,8 +411,8 @@ async def process_email(
     email.processing_status = "completed"
     email.prompt_version = prompt_version
     email.error_reason = None
-    if port_call_id:
-        email.port_call_id = port_call_id
+    if parsed_port_call_id and not email.port_call_id:
+        email.port_call_id = parsed_port_call_id
 
     job.status = "completed"
     job.result = result_dict
@@ -429,10 +431,14 @@ async def process_email(
                 parsed_items = [
                     {
                         "description": li.description,
-                        "amount": li.amount,
+                        "amount": li.amount if li.amount is not None else 0.0,
                         "currency": li.currency or "USD",
                         "quantity": li.quantity or 1.0,
-                        "unit_price": li.unit_price if li.unit_price is not None else li.amount,
+                        "unit_price": (
+                            li.unit_price
+                            if li.unit_price is not None
+                            else (li.amount if li.amount is not None else 0.0)
+                        ),
                     }
                     for li in result.line_items
                 ]
@@ -476,7 +482,8 @@ async def process_email(
                 exc_info=True,
             )
 
-        # Sentinel audit trigger (Task 14.6): run for DA/SOF/Noon documents
+    # Sentinel audit trigger (Task 14.6): run for DA/SOF/Noon documents when we have port_call
+    if port_call_id:
         try:
             await trigger_sentinel_audit_after_parse(
                 db, email, port_call_id, da=da

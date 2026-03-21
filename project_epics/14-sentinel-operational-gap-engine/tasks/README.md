@@ -11,5 +11,6 @@
 | 14.7 | [SentinelAlert component](task-07-sentinel-alert-component.md) | Frontend |
 | 14.8 | [SideBySideAudit component](task-08-side-by-side-audit-component.md) | Frontend |
 | 14.9 | [Port Call dashboard integration](task-09-port-call-dashboard-integration.md) | Frontend |
+| 14.10 | [Manual document upload & audit trigger](task-10-manual-document-upload-audit-trigger.md) | Frontend + Backend |
 
 [← Back to Epic 14](../epic.md)

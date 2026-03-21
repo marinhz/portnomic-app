@@ -52,6 +52,53 @@ export async function portCallDetailLoader({
   return { portCall, discrepancies, discrepanciesError };
 }
 
+export type PortCallDocumentsLoaderData = {
+  portCall: PortCallResponse;
+  portCallId: string;
+  discrepancies: DiscrepancyResponse[];
+  discrepanciesError: string | null;
+};
+
+export async function portCallDocumentsLoader({
+  params,
+}: {
+  params: { portCallId?: string };
+}): Promise<PortCallDocumentsLoaderData> {
+  const portCallId = params.portCallId;
+  if (!portCallId) {
+    throw redirect("/port-calls");
+  }
+
+  const [portCallResult, discrepanciesResult] = await Promise.allSettled([
+    api.get<SingleResponse<PortCallResponse>>(`/port-calls/${portCallId}`),
+    api.get<SingleResponse<DiscrepancyResponse[]>>(
+      `/port-calls/${portCallId}/discrepancies`
+    ),
+  ]);
+
+  if (portCallResult.status === "rejected") {
+    const err = portCallResult.reason;
+    throw new Error(
+      err instanceof ApiError ? err.message : "Failed to load port call"
+    );
+  }
+
+  const portCall = portCallResult.value.data.data;
+
+  let discrepancies: DiscrepancyResponse[] = [];
+  let discrepanciesError: string | null = null;
+
+  if (discrepanciesResult.status === "fulfilled") {
+    discrepancies = discrepanciesResult.value.data.data ?? [];
+  } else {
+    const err = discrepanciesResult.reason;
+    discrepanciesError =
+      err instanceof ApiError ? err.message : "Failed to load Sentinel data";
+  }
+
+  return { portCall, portCallId, discrepancies, discrepanciesError };
+}
+
 export type PortCallAuditLoaderData = {
   discrepancies: DiscrepancyResponse[];
   portCallId: string;

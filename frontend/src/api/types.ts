@@ -104,6 +104,16 @@ export type PortCallUpdate = {
   source?: PortCallSource;
 };
 
+/** Document category for manual upload */
+export type DocumentCategory = "sof" | "da" | "noon_report";
+
+/** Response after manual document upload */
+export type DocumentUploadResponse = {
+  job_id: string;
+  email_id: string;
+  status: string;
+};
+
 export type PortCallResponse = {
   id: string;
   vessel_id: string;

@@ -59,6 +59,10 @@
   * {
     @apply border-border outline-ring/50;
   }
+  /* Native select/option dark theme: use OS dark styling for dropdown */
+  .dark select {
+    color-scheme: dark;
+  }
 }
 
 @theme inline {

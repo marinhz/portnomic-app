@@ -105,6 +105,12 @@ export function PortCallDetail() {
         </div>
         <div className="flex items-center gap-3">
           <Link
+            to={`/port-calls/${portCallId}/documents`}
+            className="text-sm font-medium text-mint-500 hover:text-mint-400 dark:text-mint-400 dark:hover:text-mint-300"
+          >
+            Upload Documents
+          </Link>
+          <Link
             to={`/port-calls/${portCallId}/audit`}
             className="text-sm font-medium text-mint-500 hover:text-mint-400 dark:text-mint-400 dark:hover:text-mint-300"
           >
@@ -194,7 +200,7 @@ export function PortCallDetail() {
                 </Link>
                 <Link
                   to={`/da/generate?port_call_id=${portCallId}`}
-                  className="rounded-lg border border-mint-500 px-3 py-1.5 text-sm font-medium text-navy-800 transition-colors hover:bg-mint-100"
+                  className="rounded-lg border border-mint-500 px-3 py-1.5 text-sm font-medium text-navy-800 transition-colors hover:bg-mint-100 dark:border-mint-400 dark:text-mint-100 dark:hover:bg-mint-500/20"
                 >
                   Generate Final
                 </Link>

@@ -24,7 +24,7 @@ class ParseJobResponse(BaseModel):
 
 class ParsedLineItem(BaseModel):
     description: str
-    amount: float
+    amount: float | None = None  # LLM may omit when unparseable
     currency: str = "USD"
     quantity: float | None = None
     unit_price: float | None = None

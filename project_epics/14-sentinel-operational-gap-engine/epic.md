@@ -18,6 +18,7 @@
 | 14.7 SentinelAlert component | Frontend | react-dev, tailwind-design-system |
 | 14.8 SideBySideAudit component | Frontend | react-dev, tailwind-design-system |
 | 14.9 Port Call dashboard integration | Frontend | react-dev, react-router-v7, tailwind-design-system |
+| 14.10 Manual document upload & audit trigger | Frontend + Backend | react-dev, react-router-v7, tailwind-design-system, fastapi-python |
 
 ---
 

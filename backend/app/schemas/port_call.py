@@ -30,6 +30,22 @@ class PortCallUpdate(BaseModel):
     source: PortCallSource | None = None
 
 
+class DocumentCategory(str, Enum):
+    """Document category for manual upload."""
+
+    SOF = "sof"
+    DA = "da"
+    NOON_REPORT = "noon_report"
+
+
+class DocumentUploadResponse(BaseModel):
+    """Response after manual document upload."""
+
+    job_id: uuid.UUID
+    email_id: uuid.UUID
+    status: str = "pending"
+
+
 class PortCallResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
