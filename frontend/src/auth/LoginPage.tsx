@@ -136,6 +136,16 @@ export function LoginPage() {
                 >
                   {isSubmitting ? "Signing in..." : "Sign in"}
                 </button>
+                <p className="mt-4 text-center text-sm text-slate-500">
+                  <a
+                    href="https://portnomic.com/privacy-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-mint-600 underline hover:text-mint-700"
+                  >
+                    Privacy Policy
+                  </a>
+                </p>
               </form>
             </>
           ) : (
@@ -198,17 +208,27 @@ export function LoginPage() {
                 >
                   Back to login
                 </button>
+                <p className="mt-4 text-center text-sm text-slate-500">
+                  <a
+                    href="https://portnomic.com/privacy-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-mint-600 underline hover:text-mint-700"
+                  >
+                    Privacy Policy
+                  </a>
+                </p>
               </form>
             </>
           )}
         </div>
 
-        <footer className="mt-8 flex justify-center text-xs text-white/60">
+        <footer className="mt-8 flex justify-center text-sm text-white/80">
           <a
             href="https://portnomic.com/privacy-policy"
             target="_blank"
             rel="noopener noreferrer"
-            className="transition-colors hover:text-mint-300/90"
+            className="underline transition-colors hover:text-mint-300"
           >
             Privacy Policy
           </a>
