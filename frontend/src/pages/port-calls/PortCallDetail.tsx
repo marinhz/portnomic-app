@@ -62,8 +62,7 @@ export function PortCallDetail() {
     "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200";
 
   const showSentinelAlert =
-    !discrepanciesDismissed &&
-    discrepancies.length > 0;
+    !discrepanciesDismissed && discrepancies.length > 0;
 
   return (
     <div>

@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import logging
 import uuid
+from typing import Union
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.disbursement_account import DisbursementAccount
+from app.models.document import Document
 from app.models.email import Email
 from app.models.emission_report import EmissionReport
 from app.services.limits import PREMIUM_PLANS, get_tenant_plan
@@ -17,6 +19,8 @@ logger = logging.getLogger("shipflow.sentinel_audit_trigger")
 
 IDEMPOTENCY_KEY_PREFIX = "shipflow:sentinel_audit:"
 IDEMPOTENCY_TTL_SECONDS = 7 * 24 * 3600  # 7 days
+
+ParsedEntity = Union[Email, Document]
 
 
 def _has_da_data(ai_raw_output: dict | None) -> bool:
@@ -57,7 +61,7 @@ def _is_relevant_for_sentinel(
 
 async def trigger_sentinel_audit_after_parse(
     db: AsyncSession,
-    email: Email,
+    entity: ParsedEntity,
     port_call_id: uuid.UUID,
     *,
     da: DisbursementAccount | None = None,
@@ -65,11 +69,13 @@ async def trigger_sentinel_audit_after_parse(
 ):
     """Trigger Sentinel audit after parse job completes for a relevant document.
 
+    Supports both Email and Document (manual upload) sources.
+
     Trigger when new data affects one of: DA line items, SOF, Noon Report, or when
     port call has sufficient context for AIS lookup.
 
     - Skips if not a relevant document (no DA/SOF/Noon data).
-    - Skips if idempotency key exists (same port_call + email already audited).
+    - Skips if idempotency key exists (same port_call + entity already audited).
     - Skips for Starter plans; only Professional/Enterprise (align with Epic 12/8).
     - Invokes AuditEngine.compare_events, persists Discrepancy records.
 
@@ -79,39 +85,39 @@ async def trigger_sentinel_audit_after_parse(
     Returns AuditReport if run, None if skipped.
     """
     if not _is_relevant_for_sentinel(
-        ai_raw_output=email.ai_raw_output,
+        ai_raw_output=entity.ai_raw_output,
         da=da,
         emission_report=emission_report,
     ):
         logger.debug(
-            "Email %s has no DA/SOF/Noon data relevant for Sentinel, skipping",
-            email.id,
+            "Entity %s has no DA/SOF/Noon data relevant for Sentinel, skipping",
+            entity.id,
         )
         return None
 
     from app.redis_client import redis_client
 
-    idempotency_key = f"{IDEMPOTENCY_KEY_PREFIX}{port_call_id}:{email.id}"
+    idempotency_key = f"{IDEMPOTENCY_KEY_PREFIX}{port_call_id}:{entity.id}"
     if await redis_client.exists(idempotency_key):
         logger.info(
-            "Sentinel audit already run for port_call %s + email %s (idempotent), skipping",
+            "Sentinel audit already run for port_call %s + entity %s (idempotent), skipping",
             port_call_id,
-            email.id,
+            entity.id,
         )
         return None
 
-    plan = await get_tenant_plan(db, email.tenant_id)
+    plan = await get_tenant_plan(db, entity.tenant_id)
     if plan not in PREMIUM_PLANS:
         logger.debug(
-            "Tenant %s on plan %s (Starter); skipping Sentinel audit for email %s",
-            email.tenant_id,
+            "Tenant %s on plan %s (Starter); skipping Sentinel audit for entity %s",
+            entity.tenant_id,
             plan,
-            email.id,
+            entity.id,
         )
         return None
 
     try:
-        engine = AuditEngine(db, tenant_id=email.tenant_id)
+        engine = AuditEngine(db, tenant_id=entity.tenant_id)
         report = await engine.compare_events(port_call_id)
         await redis_client.set(idempotency_key, "1", ex=IDEMPOTENCY_TTL_SECONDS)
         logger.info(

@@ -79,6 +79,8 @@ COPY --from=frontend-builder /build/dist /usr/share/nginx/html
 # Nginx + Supervisor config
 COPY docker/nginx-all-in-one.conf /etc/nginx/nginx.conf
 COPY docker/supervisord.conf /etc/supervisor/supervisord.conf
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # Fix nginx config ownership (nginx may run as root in container)
 RUN chown -R appuser:appuser /usr/share/nginx/html
@@ -88,5 +90,6 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD curl -f http://127.0.0.1:80/health || exit 1
 
-# Run as root: supervisord needs root to manage uvicorn, arq, nginx
+# Entrypoint runs migrations before supervisord
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]

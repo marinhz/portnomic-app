@@ -1,5 +1,8 @@
 {
   "devDependencies": {
     "shadcn": "^4.0.0"
+  },
+  "dependencies": {
+    "@0xshariq/docker-mcp-server": "^2.0.4"
   }
 }

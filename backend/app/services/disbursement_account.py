@@ -90,6 +90,94 @@ async def get_da(
     return result.scalar_one_or_none()
 
 
+async def find_existing_da(
+    db: AsyncSession,
+    tenant_id: uuid.UUID,
+    port_call_id: uuid.UUID,
+    da_type: str,
+    invoice_number: str | None = None,
+) -> DisbursementAccount | None:
+    """Find existing DA for port call + type (and optionally invoice_number).
+
+    One Port Call = One Final DA + One Proforma. Used to avoid duplicate entries
+    when multiple DA documents are uploaded for the same port call.
+    """
+    base = select(DisbursementAccount).where(
+        DisbursementAccount.tenant_id == tenant_id,
+        DisbursementAccount.port_call_id == port_call_id,
+        DisbursementAccount.type == da_type,
+    )
+    if invoice_number:
+        base = base.where(DisbursementAccount.invoice_number == invoice_number)
+    base = base.order_by(DisbursementAccount.created_at.desc()).limit(1)
+    result = await db.execute(base)
+    return result.scalar_one_or_none()
+
+
+async def upsert_da_from_parse(
+    db: AsyncSession,
+    tenant_id: uuid.UUID,
+    port_call_id: uuid.UUID,
+    da_type: str,
+    parsed_line_items: list[dict],
+    invoice_number: str | None = None,
+) -> tuple[DisbursementAccount, bool]:
+    """Create or update DA from parsed document. No duplication.
+
+    - If no DA exists: create new (generate_da).
+    - If draft DA exists: update line_items/totals from parsed data.
+    - If approved/sent DA exists: return existing, do not update (triggers audit only).
+
+    Returns (da, created) where created=True if a new DA was created.
+    """
+    existing = await find_existing_da(
+        db, tenant_id, port_call_id, da_type, invoice_number=invoice_number
+    )
+    if existing is None:
+        da = await generate_da(
+            db, tenant_id, port_call_id, da_type, parsed_line_items=parsed_line_items
+        )
+        return da, True
+
+    # DA exists: update only if draft; otherwise return for audit comparison
+    if existing.status != "draft":
+        return existing, False
+
+    pc = await db.execute(
+        select(PortCall)
+        .where(PortCall.id == port_call_id, PortCall.tenant_id == tenant_id)
+        .options(selectinload(PortCall.vessel), selectinload(PortCall.port))
+    )
+    port_call = pc.scalar_one_or_none()
+    if port_call is None:
+        raise ValueError("Port call not found or does not belong to tenant")
+
+    tariff = await get_active_tariff(db, tenant_id, port_call.port_id)
+    formula_config = tariff.formula_config if tariff else {"items": [], "tax_rate": 0}
+    vessel = port_call.vessel
+    vessel_data = {
+        "name": vessel.name if vessel else "",
+        "imo": vessel.imo if vessel else "",
+        "grt": 0,
+        "nrt": 0,
+    }
+    port_call_data = {
+        "eta": port_call.eta.isoformat() if port_call.eta else None,
+        "etd": port_call.etd.isoformat() if port_call.etd else None,
+    }
+    line_items, totals = compute_line_items(
+        formula_config, vessel_data, port_call_data, parsed_line_items
+    )
+    existing.line_items = line_items
+    existing.totals = totals
+    existing.currency = totals.get("currency", "USD")
+    if invoice_number:
+        existing.invoice_number = invoice_number
+    await db.flush()
+    await db.refresh(existing)
+    return existing, False
+
+
 async def generate_da(
     db: AsyncSession,
     tenant_id: uuid.UUID,

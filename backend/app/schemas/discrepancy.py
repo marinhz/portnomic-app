@@ -20,8 +20,15 @@ class DiscrepancyCreate(BaseModel):
     raw_evidence: dict | None = None
 
 
+class SourceLabelResponse(BaseModel):
+    """Human-readable source label for audit transparency."""
+
+    id: uuid.UUID
+    label: str
+
+
 class DiscrepancyResponse(BaseModel):
-    """API/frontend response; includes severity, description, estimated_loss, source_documents."""
+    """API/frontend response; includes severity, description, estimated_loss, source_documents, source_labels."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -32,6 +39,7 @@ class DiscrepancyResponse(BaseModel):
     description: str
     estimated_loss: Decimal | None = None
     source_documents: list[uuid.UUID]
+    source_labels: list[SourceLabelResponse] = []  # Populated by API; not from model
     rule_id: str | None = None
     raw_evidence: dict | None = None
     created_at: datetime

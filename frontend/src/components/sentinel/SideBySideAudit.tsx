@@ -235,11 +235,23 @@ export function SideBySideAudit({
                             Est. loss: €{Number(d.estimated_loss).toLocaleString()}
                           </span>
                         )}
-                        {d.source_documents.length > 0 && (
+                        {(d.source_labels?.length ?? 0) > 0 ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            {(d.source_labels ?? []).map((sl) => (
+                              <span
+                                key={sl.id}
+                                className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200"
+                                title={`Source: ${sl.label}`}
+                              >
+                                Source: {sl.label}
+                              </span>
+                            ))}
+                          </div>
+                        ) : d.source_documents.length > 0 ? (
                           <span className="text-xs text-muted-foreground">
-                            Source documents: {d.source_documents.length} linked
+                            {d.source_documents.length} source document(s) linked
                           </span>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   </td>

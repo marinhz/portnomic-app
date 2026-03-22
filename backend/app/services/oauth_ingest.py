@@ -25,6 +25,7 @@ from app.services.mail_connection import (
     mark_connection_error,
     update_sync_cursor,
 )
+from app.utils.email_headers import decode_mime_header
 from app.services.vessel_filter import get_tenant_vessel_terms, is_vessel_related_email
 
 logger = logging.getLogger("shipflow.oauth_ingest")
@@ -260,8 +261,8 @@ def _parse_gmail_message(msg: dict) -> dict:
                 body_text = decoded
 
     return {
-        "subject": headers_map.get("subject"),
-        "sender": headers_map.get("from"),
+        "subject": decode_mime_header(headers_map.get("subject")),
+        "sender": decode_mime_header(headers_map.get("from")),
         "body_text": body_text,
         "body_html": body_html,
         "received_at": received_at,
@@ -314,10 +315,12 @@ async def _poll_outlook(db: AsyncSession, conn: MailConnection) -> int:
             sender = None
             from_field = msg.get("from", {}).get("emailAddress", {})
             if from_field:
-                sender = from_field.get("address") or from_field.get("name")
+                raw = from_field.get("address") or from_field.get("name")
+                sender = decode_mime_header(raw) if isinstance(raw, str) else raw
 
+            subject = decode_mime_header(msg.get("subject"))
             if settings.llm_vessel_only_sync and not is_vessel_related_email(
-                msg.get("subject"), body_text, body_html, vessel_terms
+                subject, body_text, body_html, vessel_terms
             ):
                 skipped_non_vessel += 1
                 continue
@@ -326,7 +329,7 @@ async def _poll_outlook(db: AsyncSession, conn: MailConnection) -> int:
                 db,
                 conn.tenant_id,
                 external_id=f"outlook-{msg['id']}",
-                subject=msg.get("subject"),
+                subject=subject,
                 sender=sender,
                 body_text=body_text,
                 body_html=body_html,
@@ -411,8 +414,8 @@ async def _poll_tenant_imap(db: AsyncSession, conn: MailConnection, *, full: boo
             else:
                 mid_str = msg_id.decode() if isinstance(msg_id, bytes) else str(msg_id)
                 external_id = f"imap-{conn.id}-{mid_str}"
-            subject = msg.get("Subject")
-            sender = msg.get("From")
+            subject = decode_mime_header(msg.get("Subject"))
+            sender = decode_mime_header(msg.get("From"))
 
             received_at = None
             date_str = msg.get("Date")

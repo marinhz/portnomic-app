@@ -15,8 +15,11 @@ class ParseJob(Base):
     tenant_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
     )
-    email_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("emails.id", ondelete="CASCADE"), nullable=False
+    email_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("emails.id", ondelete="CASCADE"), nullable=True
+    )
+    document_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), nullable=True
     )
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="pending")
     result: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
@@ -30,9 +33,11 @@ class ParseJob(Base):
 
     tenant = relationship("Tenant")
     email = relationship("Email", back_populates="parse_jobs")
+    document = relationship("Document", back_populates="parse_jobs")
 
     __table_args__ = (
         Index("ix_parse_jobs_tenant_status", "tenant_id", "status"),
         Index("ix_parse_jobs_email_id", "email_id"),
+        Index("ix_parse_jobs_document_id", "document_id"),
         Index("ix_parse_jobs_tenant_created", "tenant_id", "created_at"),
     )

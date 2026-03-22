@@ -75,7 +75,9 @@ docker compose -f docker-compose.traefik.yml up -d
 
 ---
 
-## Step 6: Run database migrations
+## Step 6: Database migrations
+
+Migrations run automatically when the app container starts. To run them manually (e.g. after pulling new code):
 
 ```bash
 docker compose -f docker-compose.traefik.yml exec app alembic upgrade head

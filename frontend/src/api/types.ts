@@ -23,6 +23,12 @@ export type SingleResponse<T> = {
   data: T;
 };
 
+/** Source label for audit transparency (e.g., "Manual PDF: invoice.pdf", "Email from agent@port.com") */
+export type SourceLabelResponse = {
+  id: string;
+  label: string;
+};
+
 /** Sentinel discrepancy from GET /port-calls/{id}/discrepancies */
 export type DiscrepancyResponse = {
   id: string;
@@ -32,6 +38,7 @@ export type DiscrepancyResponse = {
   description: string;
   estimated_loss: string | null;
   source_documents: string[];
+  source_labels?: SourceLabelResponse[]; // Human-readable source labels for audit confidence
   rule_id: string | null;
   raw_evidence: Record<string, unknown> | null;
   created_at: string;
@@ -107,10 +114,20 @@ export type PortCallUpdate = {
 /** Document category for manual upload */
 export type DocumentCategory = "sof" | "da" | "noon_report";
 
+/** Document list item for port call documents tab */
+export type DocumentResponse = {
+  id: string;
+  port_call_id: string;
+  filename: string;
+  category: string | null;
+  processing_status: string;
+  created_at: string;
+};
+
 /** Response after manual document upload */
 export type DocumentUploadResponse = {
-  job_id: string;
-  email_id: string;
+  job_id: string | null;
+  document_id: string;
   status: string;
 };
 
@@ -397,7 +414,8 @@ export type ParseJobResult =
 
 export type ParseJobResponse = {
   id: string;
-  email_id: string;
+  email_id?: string | null;
+  document_id?: string | null;
   status: string;
   result: ParseJobResult | null;
   error_message: string | null;

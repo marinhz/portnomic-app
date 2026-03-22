@@ -37,6 +37,7 @@ class DisbursementAccount(Base):
     line_items: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     totals: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
+    invoice_number: Mapped[str | None] = mapped_column(String(100), nullable=True)  # For dedup matching
     pdf_blob_id: Mapped[str | None] = mapped_column(String(512), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

@@ -3,7 +3,9 @@ import { Link, useLoaderData, useParams } from "react-router";
 import api, { ApiError } from "@/api/client";
 import type {
   SingleResponse,
+  PaginatedResponse,
   DocumentCategory,
+  DocumentResponse,
   DocumentUploadResponse,
   DiscrepancyResponse,
   ParseJobResponse,
@@ -19,15 +21,29 @@ type UploadPhase = "idle" | "uploading" | "parsing" | "auditing" | "done" | "err
 
 export function PortCallDocuments() {
   const { portCallId } = useParams();
-  const { portCall, discrepancies, discrepanciesError } =
+  const { portCall, documents: initialDocuments, discrepancies, discrepanciesError } =
     useLoaderData() as PortCallDocumentsLoaderData;
 
   const [category, setCategory] = useState<DocumentCategory>("da");
   const [phase, setPhase] = useState<UploadPhase>("idle");
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+  const [documents, setDocuments] = useState<DocumentResponse[]>(initialDocuments);
   const [discrepanciesState, setDiscrepanciesState] = useState<DiscrepancyResponse[]>(discrepancies);
   const [discrepanciesDismissed, setDiscrepanciesDismissed] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+
+  const refreshDocuments = useCallback(async () => {
+    if (!portCallId) return;
+    try {
+      const res = await api.get<PaginatedResponse<DocumentResponse>>(
+        `/port-calls/${portCallId}/documents`
+      );
+      setDocuments(res.data.data ?? []);
+    } catch {
+      // ignore
+    }
+  }, [portCallId]);
 
   const refreshDiscrepancies = useCallback(async () => {
     if (!portCallId) return;
@@ -46,6 +62,7 @@ export function PortCallDocuments() {
       if (!portCallId) return;
 
       setUploadError(null);
+      setUploadMessage(null);
       setPhase("uploading");
 
       const formData = new FormData();
@@ -54,14 +71,34 @@ export function PortCallDocuments() {
 
       try {
         const res = await api.post<SingleResponse<DocumentUploadResponse>>(
-          `/port-calls/${portCallId}/documents`,
+          `/port-calls/${portCallId}/upload`,
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" },
           }
         );
 
-        const { job_id } = res.data.data;
+        const { job_id, status: uploadStatus } = res.data.data;
+
+        if (uploadStatus === "already_processed") {
+          setUploadMessage("This document has already been processed.");
+          setPhase("done");
+          await Promise.all([refreshDocuments(), refreshDiscrepancies()]);
+          return;
+        }
+
+        setDocuments((prev) =>
+          prev.concat([
+            {
+              id: res.data.data.document_id,
+              port_call_id: portCallId!,
+              filename: file.name,
+              category: category,
+              processing_status: "pending",
+              created_at: new Date().toISOString(),
+            },
+          ])
+        );
         setPhase("parsing");
 
         const poll = async () => {
@@ -74,7 +111,7 @@ export function PortCallDocuments() {
 
             if (status === "completed") {
               setPhase("auditing");
-              await refreshDiscrepancies();
+              await Promise.all([refreshDiscrepancies(), refreshDocuments()]);
               setPhase("done");
               return;
             }
@@ -104,12 +141,16 @@ export function PortCallDocuments() {
         );
       }
     },
-    [portCallId, category, refreshDiscrepancies]
+    [portCallId, category, refreshDiscrepancies, refreshDocuments]
   );
 
   useEffect(() => {
     setDiscrepanciesState(discrepancies);
   }, [discrepancies]);
+
+  useEffect(() => {
+    setDocuments(initialDocuments);
+  }, [initialDocuments]);
 
   const isUploading = phase === "uploading" || phase === "parsing" || phase === "auditing";
   const showSentinelAlert =
@@ -172,7 +213,7 @@ export function PortCallDocuments() {
               className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800 dark:border-green-800 dark:bg-green-950/30 dark:text-green-200"
               role="status"
             >
-              Document processed successfully. No discrepancies detected.
+              {uploadMessage ?? "Document processed successfully. No discrepancies detected."}
             </div>
           )}
 
@@ -195,6 +236,50 @@ export function PortCallDocuments() {
           />
         </CardContent>
       </Card>
+
+      {documents.length > 0 && (
+        <Card>
+          <CardHeader>
+            <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+              Uploaded documents
+            </h2>
+          </CardHeader>
+          <CardContent>
+            <ul className="divide-y divide-slate-200 dark:divide-slate-700">
+              {documents.map((doc) => (
+                <li
+                  key={doc.id}
+                  className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">
+                      {doc.filename}
+                    </p>
+                    <p className="mt-0.5 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      <span className="capitalize">{doc.category ?? "—"}</span>
+                      <span>•</span>
+                      <span
+                        className={
+                          doc.processing_status === "completed"
+                            ? "text-green-600 dark:text-green-400"
+                            : doc.processing_status === "failed"
+                              ? "text-red-600 dark:text-red-400"
+                              : "text-amber-600 dark:text-amber-400"
+                        }
+                      >
+                        {doc.processing_status}
+                      </span>
+                    </p>
+                  </div>
+                  <span className="ml-3 shrink-0 text-xs text-slate-400 dark:text-slate-500">
+                    {new Date(doc.created_at).toLocaleString()}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex gap-3">
         <Link

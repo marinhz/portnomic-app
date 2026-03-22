@@ -24,6 +24,7 @@ export function PortCallAudit() {
       </h1>
       <p className="text-slate-600 dark:text-slate-400">
         Compare vendor claims (Invoice/DA) against operational reality (SOF, AIS, Noon Report).
+        Each discrepancy shows its data sources (Manual PDF or Email) for audit transparency.
       </p>
 
       {error && (

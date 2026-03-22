@@ -1,8 +1,9 @@
 {
   "mcpServers": {
     "docker": {
-      "command": "npx",
-      "args": ["-y", "@0xshariq/docker-mcp-server"]
+      "command": "node",
+      "args": ["./node_modules/@0xshariq/docker-mcp-server/dist/index.js"],
+      "cwd": "."
     },
     "shadcn": {
       "command": "npx",

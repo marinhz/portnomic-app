@@ -10,6 +10,7 @@ from app.config import settings
 from app.dependencies.database import get_db
 from app.redis_client import redis_client
 from app.services.email_ingest import ingest_and_enqueue
+from app.utils.email_headers import decode_mime_header
 from app.services.vessel_filter import get_tenant_vessel_terms, is_vessel_related_email
 
 logger = logging.getLogger("shipflow.webhooks")
@@ -73,8 +74,8 @@ async def inbound_email_webhook(
         return {"status": "skipped", "reason": "unknown_tenant"}
 
     external_id = data.get("message_id") or data.get("Message-ID") or str(uuid.uuid4())
-    subject = data.get("subject")
-    sender = data.get("from") or data.get("from_email")
+    subject = decode_mime_header(data.get("subject"))
+    sender = decode_mime_header(data.get("from") or data.get("from_email"))
     body_text = data.get("text")
     body_html = data.get("html")
 

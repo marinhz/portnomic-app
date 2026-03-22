@@ -8,8 +8,11 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from typing import Union
+
 from app.models.anomaly import ANOMALY_RULE_IDS, Anomaly
 from app.models.disbursement_account import DisbursementAccount
+from app.models.document import Document
 from app.models.email import Email
 from app.models.emission_report import EmissionReport
 from app.models.port_call import PortCall
@@ -241,23 +244,26 @@ def _ld004_quantity_variance(
 async def run_audit(
     db: AsyncSession,
     *,
-    email: Email,
+    source: Union[Email, Document],
     port_call: PortCall,
     vessel: Vessel,  # Reserved for LD-004 vessel-dimension checks
     da: DisbursementAccount | None = None,
 ) -> list[Anomaly]:
     """Run leakage audit (LD-001 through LD-004) and persist anomalies.
 
-    Input: Email (with ai_raw_output), PortCall, Vessel, optional DA.
+    Input: Email or Document (with ai_raw_output), PortCall, Vessel, optional DA.
     Output: List of persisted Anomaly records.
     """
-    tenant_id = email.tenant_id
-    ai_raw = email.ai_raw_output or {}
+    tenant_id = source.tenant_id
+    ai_raw = source.ai_raw_output or {}
     line_items = ai_raw.get("line_items") or []
 
     if not line_items:
-        logger.debug("No line items in ai_raw_output for email %s, skipping audit", email.id)
+        logger.debug("No line items in ai_raw_output for source %s, skipping audit", source.id)
         return []
+
+    email_id = source.id if isinstance(source, Email) else None
+    document_id = source.id if isinstance(source, Document) else None
 
     # Collect existing DA line items for this port call (for LD-002)
     stmt = select(DisbursementAccount).where(
@@ -311,7 +317,8 @@ async def run_audit(
     for a in anomalies_data:
         anomaly = Anomaly(
             tenant_id=tenant_id,
-            email_id=email.id,
+            email_id=email_id,
+            document_id=document_id,
             da_id=da.id if da else None,
             port_call_id=port_call.id,
             rule_id=a["rule_id"],
@@ -336,7 +343,7 @@ async def run_audit(
             payload={
                 "rule_id": a["rule_id"],
                 "result": "fail",
-                "email_id": str(email.id),
+                "source_id": str(source.id),
                 "port_call_id": str(port_call.id),
             },
         )
@@ -349,19 +356,19 @@ async def run_audit(
                 tenant_id=tenant_id,
                 user_id=None,
                 action="leakage_audit_rule",
-                resource_type="email",
-                resource_id=str(email.id),
+                resource_type="document" if document_id else "email",
+                resource_id=str(source.id),
                 payload={
                     "rule_id": rule_id,
                     "result": "pass",
-                    "email_id": str(email.id),
+                    "source_id": str(source.id),
                     "port_call_id": str(port_call.id),
                 },
             )
 
     logger.info(
-        "Leakage audit for email %s: %d anomalies (LD-001..LD-004)",
-        email.id,
+        "Leakage audit for source %s: %d anomalies (LD-001..LD-004)",
+        source.id,
         len(created),
     )
     return created

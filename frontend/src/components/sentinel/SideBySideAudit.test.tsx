@@ -86,4 +86,26 @@ describe("SideBySideAudit", () => {
     expect(screen.getByText(/overcharged tug hours/i)).toBeInTheDocument();
     expect(screen.getByText(/est\. loss: €250/i)).toBeInTheDocument();
   });
+
+  it("displays source labels when provided", async () => {
+    const withLabels: DiscrepancyResponse = {
+      ...mockDiscrepancyS001,
+      source_labels: [
+        { id: "doc1", label: "Manual PDF: invoice.pdf" },
+        { id: "doc2", label: "Email from agent@port.com" },
+      ],
+    };
+    render(
+      <SideBySideAudit
+        discrepancies={[withLabels]}
+        portCallId="pc1"
+      />
+    );
+    const expandButton = screen.getByRole("button", {
+      name: /expand details/i,
+    });
+    await userEvent.click(expandButton);
+    expect(screen.getByText(/Source: Manual PDF: invoice\.pdf/)).toBeInTheDocument();
+    expect(screen.getByText(/Source: Email from agent@port\.com/)).toBeInTheDocument();
+  });
 });

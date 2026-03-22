@@ -15,6 +15,7 @@ from app.models.parse_job import ParseJob
 from app.redis_client import redis_client
 from app.services.email_service import get_email_by_external_id
 from app.services.limits import UPGRADE_MESSAGES, check_ai_parse_limit
+from app.utils.email_headers import decode_mime_header
 from app.services.vessel_filter import get_tenant_vessel_terms, is_vessel_related_email
 
 logger = logging.getLogger("shipflow.email_ingest")
@@ -160,8 +161,8 @@ async def poll_imap(db: AsyncSession) -> int:
             msg = email_lib.message_from_bytes(raw_email)
 
             external_id = msg.get("Message-ID", f"imap-{msg_id.decode()}")
-            subject = msg.get("Subject")
-            sender = msg.get("From")
+            subject = decode_mime_header(msg.get("Subject"))
+            sender = decode_mime_header(msg.get("From"))
 
             received_at = None
             date_str = msg.get("Date")

@@ -3,8 +3,13 @@ AIS client — connects to aisstream.io WebSocket API to fetch vessel position d
 
 Provides berth arrival/departure inference for Sentinel Rule S-002 (Berthage/Stay Verification).
 When AIS is unavailable or vessel is not at berth, returns None; AuditEngine falls back to eta/etd.
+
+API ref: https://aisstream.io/documentation
+- Subscription message must be sent within 3 seconds of connection.
+- Use asyncio.wait_for on recv() to avoid blocking indefinitely when vessel is not transmitting.
 """
 
+import asyncio
 import json
 import logging
 import uuid
@@ -131,17 +136,31 @@ async def _stream_and_infer(
     speed_threshold = settings.aisstream_berth_speed_threshold_knots
     ttl = settings.aisstream_cache_ttl_seconds
 
+    # Per docs: subscription must be sent within 3 seconds of connection
+    logger.debug("AIS connecting to %s for MMSI %s", settings.aisstream_url, mmsi)
     async with websockets.connect(
         settings.aisstream_url,
         open_timeout=10,
         close_timeout=5,
+        ping_interval=20,
+        ping_timeout=10,
     ) as ws:
         await ws.send(json.dumps(subscribe_msg))
-        deadline = datetime.now(timezone.utc).timestamp() + timeout
+        logger.debug("AIS subscribed, collecting for %ds", timeout)
+        deadline_ts = datetime.now(timezone.utc).timestamp() + timeout
+        recv_timeout = 5.0  # Per docs: must read promptly or connection may be closed
 
-        while datetime.now(timezone.utc).timestamp() < deadline:
+        while datetime.now(timezone.utc).timestamp() < deadline_ts:
+            remaining = deadline_ts - datetime.now(timezone.utc).timestamp()
+            if remaining <= 0:
+                break
             try:
-                msg = await ws.recv()
+                msg = await asyncio.wait_for(
+                    ws.recv(), timeout=min(recv_timeout, remaining)
+                )
+            except asyncio.TimeoutError:
+                # No message; vessel may not be transmitting in this area
+                continue
             except websockets.exceptions.ConnectionClosed:
                 break
 

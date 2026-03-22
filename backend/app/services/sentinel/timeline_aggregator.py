@@ -1,4 +1,8 @@
-"""Timeline aggregator — fetches all sources, normalizes, returns unified TimelineEvent[] sorted by start."""
+"""Timeline aggregator — fetches all sources, normalizes, returns unified TimelineEvent[] sorted by start.
+
+Audit logic: Invoice (Manual/Email) vs SOF (Manual/Email) vs Noon Report (Manual/Email).
+All three sources support both manual uploads (Document) and email ingestion (Email).
+"""
 
 import uuid
 
@@ -7,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.disbursement_account import DisbursementAccount
+from app.models.document import Document, DocumentSourceType
 from app.models.emission_report import EmissionReport
 from app.models.email import Email
 from app.models.port_call import PortCall
@@ -26,11 +31,11 @@ async def get_timeline_events(
     """
     Fetches all sources for a port call, normalizes to TimelineEvent, returns merged sorted list.
 
-    Sources:
-    - DA: DisbursementAccount line_items (tug, pilot, berth)
-    - SOF: Email ai_raw_output with sof_timestamps or port_log
-    - Noon Report: EmissionReport fuel_entries
-    - AIS: Placeholder (Task 14.5)
+    Sources (each from both Manual Upload and Email):
+    - DA (Invoices): DisbursementAccount line_items (tug, pilot, berth)
+    - SOF: Document/Email ai_raw_output with sof_timestamps or port_log
+    - Noon Report: EmissionReport fuel_entries (from Document or Email)
+    - AIS: Berth data from aisstream.io
     """
     events: list[TimelineEvent] = []
 
@@ -43,7 +48,7 @@ async def get_timeline_events(
     if not port_call:
         return []
 
-    # 1. DA normalizer — from DisbursementAccount line_items
+    # 1. DA normalizer — from DisbursementAccount (manual uploads + email)
     da_result = await db.execute(
         select(DisbursementAccount).where(
             DisbursementAccount.tenant_id == tenant_id,
@@ -61,14 +66,15 @@ async def get_timeline_events(
             )
         )
 
-    # 2. SOF normalizer — from Email ai_raw_output (sof_timestamps or port_log)
-    email_result = await db.execute(
-        select(Email).where(
-            Email.tenant_id == tenant_id,
-            Email.port_call_id == port_call_id,
+    # 2. SOF normalizer — from Email and Document ai_raw_output (sof_timestamps or port_log)
+    for email in (
+        await db.execute(
+            select(Email).where(
+                Email.tenant_id == tenant_id,
+                Email.port_call_id == port_call_id,
+            )
         )
-    )
-    for email in email_result.scalars().all():
+    ).scalars().all():
         ai_raw = email.ai_raw_output or {}
         sof_data = ai_raw.get("sof_timestamps") or ai_raw.get("port_log")
         if sof_data and isinstance(sof_data, dict):
@@ -80,7 +86,27 @@ async def get_timeline_events(
                 )
             )
 
-    # 3. Noon Report normalizer — from EmissionReport
+    doc_result = await db.execute(
+        select(Document).where(
+            Document.tenant_id == tenant_id,
+            Document.port_call_id == port_call_id,
+            Document.source_type == DocumentSourceType.MANUAL_UPLOAD,
+            Document.processing_status == "completed",
+        )
+    )
+    for doc in doc_result.scalars().all():
+        ai_raw = doc.ai_raw_output or {}
+        sof_data = ai_raw.get("sof_timestamps") or ai_raw.get("port_log")
+        if sof_data and isinstance(sof_data, dict):
+            events.extend(
+                normalize_sof(
+                    sof_data=sof_data,
+                    source_document_id=doc.id,
+                    port_call_id=port_call_id,
+                )
+            )
+
+    # 3. Noon Report normalizer — from EmissionReport (manual + email; report_date + fuel_entries)
     er_result = await db.execute(
         select(EmissionReport)
         .where(

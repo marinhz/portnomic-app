@@ -88,6 +88,7 @@ For development or small deployments (staging, demo, single VM), use the all-in-
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 ```
 
+- **Migrations** run automatically on container startup (`alembic upgrade head`)
 - **Frontend:** http://localhost
 - **API:** http://localhost/api
 - **Docs:** http://localhost/docs (when ENVIRONMENT=development)

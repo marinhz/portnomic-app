@@ -30,7 +30,8 @@ class AnomalyResponse(BaseModel):
 
     id: uuid.UUID
     tenant_id: uuid.UUID
-    email_id: uuid.UUID
+    email_id: uuid.UUID | None = None
+    document_id: uuid.UUID | None = None
     da_id: uuid.UUID | None = None
     port_call_id: uuid.UUID
     rule_id: str

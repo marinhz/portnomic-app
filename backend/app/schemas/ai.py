@@ -12,7 +12,8 @@ class ParseJobResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
-    email_id: uuid.UUID
+    email_id: uuid.UUID | None = None
+    document_id: uuid.UUID | None = None
     status: str
     result: dict | None
     error_message: str | None
@@ -38,6 +39,7 @@ class ParsedEmailResult(BaseModel):
     port_code: str | None = None
     eta: str | None = None
     etd: str | None = None
+    invoice_number: str | None = None  # For DA dedup matching (same invoice = same DA)
     line_items: list[ParsedLineItem] = Field(default_factory=list)
     total_amount: float | None = None
     currency: str | None = None

@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.document import Document
 from app.models.email import Email
 from app.models.emission_report import EmissionReport, FuelEntry
 from app.models.parse_job import ParseJob
@@ -18,7 +19,7 @@ from app.schemas.ai import ParsedEmailResult
 from app.schemas.emission import EXTRACTION_SCHEMA_VERSION, EmissionExtractionResult
 from app.services import audit as audit_svc
 from app.services.carbon_price import get_current_price_eur
-from app.services.disbursement_account import generate_da
+from app.services.disbursement_account import generate_da, upsert_da_from_parse
 from app.services.emission_anomaly import detect_and_apply_anomalies
 from app.services.emission_calculator import calculate_emissions, estimate_eua
 from app.services.emission_parser import EMISSION_PROMPT_VERSION, parse_emission_content
@@ -160,20 +161,81 @@ async def _resolve_vessel_for_emission(
     return vessel.id
 
 
+async def _find_existing_emission_report(
+    db: AsyncSession,
+    tenant_id: uuid.UUID,
+    vessel_id: uuid.UUID,
+    report_date,
+) -> EmissionReport | None:
+    """Find existing Noon Report by unique key: vessel_id + report_date.
+
+    One set of Noon Reports per vessel per date; additional uploads merge.
+    """
+    from datetime import date
+
+    if isinstance(report_date, str):
+        try:
+            report_date = date.fromisoformat(report_date[:10])
+        except (ValueError, TypeError):
+            return None
+    result = await db.execute(
+        select(EmissionReport).where(
+            EmissionReport.tenant_id == tenant_id,
+            EmissionReport.vessel_id == vessel_id,
+            EmissionReport.report_date == report_date,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
 async def _persist_emission_report(
     db: AsyncSession,
     tenant_id: uuid.UUID,
-    email_id: uuid.UUID,
     result: EmissionExtractionResult,
     vessel_id: uuid.UUID,
     port_call_id: uuid.UUID | None,
+    email_id: uuid.UUID | None = None,
+    document_id: uuid.UUID | None = None,
 ) -> EmissionReport:
-    """Create EmissionReport and FuelEntry records from extraction result."""
+    """Create or merge EmissionReport. Unique key: vessel_id + report_date.
+
+    - If no report exists: create new.
+    - If exists: merge (update fuel entries) — one official version per date.
+    Additional documents for same date update the report; Sentinel can compare
+    via document ai_raw_output for audit.
+    """
+    existing = await _find_existing_emission_report(
+        db, tenant_id, vessel_id, result.report_date
+    )
+    if existing:
+        # Merge: replace fuel entries with new parsed data
+        existing.fuel_entries.clear()
+        for fe in result.fuel_entries:
+            entry = FuelEntry(
+                fuel_type=fe.fuel_type,
+                consumption_mt=fe.consumption_mt,
+                operational_status=fe.operational_status,
+            )
+            existing.fuel_entries.append(entry)
+        existing.distance_nm = result.distance_nm
+        if port_call_id is not None:
+            existing.port_call_id = port_call_id
+        await db.flush()
+        await db.refresh(existing)
+        logger.info(
+            "Merged Noon Report %s for vessel %s date %s (duplicate upload)",
+            existing.id,
+            vessel_id,
+            result.report_date,
+        )
+        return existing
+
     report = EmissionReport(
         tenant_id=tenant_id,
         vessel_id=vessel_id,
         port_call_id=port_call_id,
         email_id=email_id,
+        document_id=document_id,
         report_date=result.report_date,
         distance_nm=result.distance_nm,
         schema_version=EXTRACTION_SCHEMA_VERSION,
@@ -240,10 +302,11 @@ async def _process_emission_email(
     emission_report = await _persist_emission_report(
         db,
         tenant_id=email.tenant_id,
-        email_id=email.id,
         result=result,
         vessel_id=vessel_id,
         port_call_id=email.port_call_id,
+        email_id=email.id,
+        document_id=None,
     )
     await db.refresh(emission_report)  # Load fuel_entries for anomaly detection
     await detect_and_apply_anomalies(db, emission_report)
@@ -421,7 +484,7 @@ async def process_email(
 
     await db.flush()
 
-    # Auto-create DA when we have a port call and parsed line items (disbursement email).
+    # Auto-create or update DA when we have a port call and parsed line items (disbursement email).
     da = None
     if port_call_id and result.line_items:
         da_type = "final" if (email.subject or "").lower().find("final") >= 0 else "proforma"
@@ -442,22 +505,24 @@ async def process_email(
                     }
                     for li in result.line_items
                 ]
-                da = await generate_da(
+                da, created = await upsert_da_from_parse(
                     db,
                     email.tenant_id,
                     port_call_id,
                     da_type,
-                    parsed_line_items=parsed_items,
+                    parsed_items,
+                    invoice_number=getattr(result, "invoice_number", None),
                 )
                 logger.info(
-                    "Auto-created DA %s from parsed email %s (type=%s)",
+                    "%s DA %s from parsed email %s (type=%s)",
+                    "Created" if created else "Updated",
                     da.id,
                     email_id,
                     da_type,
                 )
             except Exception as exc:
                 logger.warning(
-                    "Failed to auto-create DA from email %s: %s",
+                    "Failed to auto-create/update DA from email %s: %s",
                     email_id,
                     exc,
                     exc_info=True,
@@ -497,3 +562,289 @@ async def process_email(
             )
 
     logger.info("Email %s parsed successfully, job %s completed", email_id, job_id)
+
+
+async def _process_emission_document(
+    db: AsyncSession,
+    document: Document,
+    job: ParseJob,
+    body: str,
+) -> None:
+    """Parse document as Noon/Bunker report and persist EmissionReport."""
+    try:
+        result = await parse_emission_content(
+            body, document.filename or "", tenant_id=document.tenant_id, db=db
+        )
+    except LlmConfigError as exc:
+        logger.warning("LLM config error for emission document %s: %s", document.id, exc)
+        job.status = "failed"
+        job.error_message = str(exc)
+        job.completed_at = datetime.now(timezone.utc)
+        document.processing_status = "failed"
+        document.error_reason = str(exc)
+        document.prompt_version = EMISSION_PROMPT_VERSION
+        await db.flush()
+        return
+    except Exception as exc:
+        if is_transient_error(exc):
+            raise
+        logger.exception("LLM permanent failure for emission document %s", document.id)
+        job.status = "failed"
+        job.error_message = str(exc)
+        job.completed_at = datetime.now(timezone.utc)
+        document.processing_status = "failed"
+        document.error_reason = str(exc)
+        document.prompt_version = EMISSION_PROMPT_VERSION
+        document.retry_count += 1
+        await db.flush()
+        return
+
+    vessel_id = await _resolve_vessel_for_emission(db, document.tenant_id, result)
+    if not vessel_id:
+        job.status = "failed"
+        job.error_message = "Could not resolve vessel from emission extraction"
+        job.completed_at = datetime.now(timezone.utc)
+        document.processing_status = "failed"
+        document.error_reason = "Could not resolve vessel"
+        document.prompt_version = EMISSION_PROMPT_VERSION
+        await db.flush()
+        return
+
+    emission_report = await _persist_emission_report(
+        db,
+        tenant_id=document.tenant_id,
+        result=result,
+        vessel_id=vessel_id,
+        port_call_id=document.port_call_id,
+        email_id=None,
+        document_id=document.id,
+    )
+    await db.refresh(emission_report)
+    await detect_and_apply_anomalies(db, emission_report)
+
+    result_dict = result.model_dump(mode="json")
+    document.ai_raw_output = result_dict
+    document.processing_status = "completed"
+    document.prompt_version = EMISSION_PROMPT_VERSION
+    document.error_reason = None
+
+    carbon_price = await get_current_price_eur()
+    emissions_result = calculate_emissions(result)
+    eua_estimate = estimate_eua(result, carbon_price)
+
+    job.status = "completed"
+    job.result = {
+        "type": "emission",
+        "emission_report_id": str(emission_report.id),
+        "extraction": result_dict,
+        "emissions": emissions_result.model_dump(mode="json"),
+        "eua_estimate": eua_estimate.model_dump(mode="json"),
+        "anomaly_flags": emission_report.anomaly_flags,
+        "status": emission_report.status,
+    }
+    job.prompt_version = EMISSION_PROMPT_VERSION
+    job.completed_at = datetime.now(timezone.utc)
+
+    await db.flush()
+    logger.info(
+        "Emission document %s parsed successfully, EmissionReport %s created, job %s completed",
+        document.id,
+        emission_report.id,
+        job.id,
+    )
+
+    if document.port_call_id:
+        try:
+            await trigger_sentinel_audit_after_parse(
+                db,
+                document,
+                document.port_call_id,
+                emission_report=emission_report,
+            )
+        except Exception as exc:
+            logger.warning(
+                "Sentinel audit failed for emission document %s (non-fatal): %s",
+                document.id,
+                exc,
+                exc_info=True,
+            )
+
+
+async def process_document(
+    db: AsyncSession,
+    document_id: uuid.UUID,
+    job_id: uuid.UUID,
+    *,
+    force_emission: bool = False,
+) -> None:
+    """Process a manually uploaded document: load document, call LLM, validate, persist.
+
+    For MANUAL_UPLOAD: skips vessel/port resolution, uses document.port_call_id directly.
+    Triggers DA auto-create, leakage audit, Sentinel same as email flow.
+    """
+    document = (await db.execute(select(Document).where(Document.id == document_id))).scalar_one_or_none()
+    if document is None:
+        logger.error("Document %s not found, skipping", document_id)
+        return
+
+    if document.processing_status == "completed":
+        logger.info("Document %s already completed, skipping (idempotent)", document_id)
+        job = (await db.execute(select(ParseJob).where(ParseJob.id == job_id))).scalar_one_or_none()
+        if job:
+            job.status = "completed"
+            job.result = document.ai_raw_output
+            job.completed_at = datetime.now(timezone.utc)
+            await db.flush()
+        return
+
+    job = (await db.execute(select(ParseJob).where(ParseJob.id == job_id))).scalar_one_or_none()
+    if job is None:
+        logger.error("ParseJob %s not found", job_id)
+        return
+
+    job.status = "processing"
+    job.started_at = datetime.now(timezone.utc)
+    document.processing_status = "processing"
+    await db.flush()
+
+    body = document.body_text or ""
+    if not body.strip():
+        job.status = "failed"
+        job.error_message = "Document has no content"
+        job.completed_at = datetime.now(timezone.utc)
+        document.processing_status = "failed"
+        document.error_reason = "Document has no content"
+        await db.flush()
+        return
+
+    use_emission_parser = force_emission or (
+        document.category == "noon_report"
+        or is_emission_report(document.filename, document.body_text, None)
+    )
+    if use_emission_parser:
+        await _process_emission_document(db, document, job, body)
+        return
+
+    prompt_text, prompt_version = await get_prompt(
+        ParserType.DA_EMAIL.value, tenant_id=document.tenant_id, db=db
+    )
+    try:
+        result = await parse_email_content(
+            prompt_text,
+            body,
+            document.filename or "",
+            tenant_id=document.tenant_id,
+            db=db,
+        )
+    except LlmConfigError as exc:
+        logger.warning("LLM config error for document %s: %s", document_id, exc)
+        job.status = "failed"
+        job.error_message = str(exc)
+        job.completed_at = datetime.now(timezone.utc)
+        document.processing_status = "failed"
+        document.error_reason = str(exc)
+        document.prompt_version = prompt_version
+        await db.flush()
+        return
+    except Exception as exc:
+        if is_transient_error(exc):
+            raise
+        logger.exception("LLM permanent failure for document %s", document_id)
+        job.status = "failed"
+        job.error_message = str(exc)
+        job.completed_at = datetime.now(timezone.utc)
+        document.processing_status = "failed"
+        document.error_reason = str(exc)
+        document.prompt_version = prompt_version
+        document.retry_count += 1
+        await db.flush()
+        return
+
+    result_dict = result.model_dump(mode="json")
+    port_call_id = document.port_call_id  # Always set for manual uploads
+
+    document.ai_raw_output = result_dict
+    document.processing_status = "completed"
+    document.prompt_version = prompt_version
+    document.error_reason = None
+
+    job.status = "completed"
+    job.result = result_dict
+    job.prompt_version = prompt_version
+    job.completed_at = datetime.now(timezone.utc)
+
+    await db.flush()
+
+    da = None
+    if port_call_id and result.line_items:
+        da_type = "final" if (document.filename or "").lower().find("final") >= 0 else "proforma"
+        da_limit = await check_da_limit(db, document.tenant_id)
+        if da_limit.allowed:
+            try:
+                parsed_items = [
+                    {
+                        "description": li.description,
+                        "amount": li.amount if li.amount is not None else 0.0,
+                        "currency": li.currency or "USD",
+                        "quantity": li.quantity or 1.0,
+                        "unit_price": (
+                            li.unit_price
+                            if li.unit_price is not None
+                            else (li.amount if li.amount is not None else 0.0)
+                        ),
+                    }
+                    for li in result.line_items
+                ]
+                da, created = await upsert_da_from_parse(
+                    db,
+                    document.tenant_id,
+                    port_call_id,
+                    da_type,
+                    parsed_items,
+                    invoice_number=getattr(result, "invoice_number", None),
+                )
+                logger.info(
+                    "%s DA %s from parsed document %s (type=%s)",
+                    "Created" if created else "Updated",
+                    da.id,
+                    document_id,
+                    da_type,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Failed to auto-create/update DA from document %s: %s",
+                    document_id,
+                    exc,
+                    exc_info=True,
+                )
+        else:
+            logger.info(
+                "DA limit exceeded for tenant %s (%d/%s), skipping auto-create from document %s",
+                document.tenant_id,
+                da_limit.current,
+                da_limit.limit,
+                document_id,
+            )
+
+        try:
+            await trigger_leakage_audit_after_parse(db, document, da=da)
+        except Exception as exc:
+            logger.warning(
+                "Leakage audit failed for document %s (non-fatal): %s",
+                document_id,
+                exc,
+                exc_info=True,
+            )
+
+    if port_call_id:
+        try:
+            await trigger_sentinel_audit_after_parse(db, document, port_call_id, da=da)
+        except Exception as exc:
+            logger.warning(
+                "Sentinel audit failed for document %s (non-fatal): %s",
+                document_id,
+                exc,
+                exc_info=True,
+            )
+
+    logger.info("Document %s parsed successfully, job %s completed", document_id, job_id)

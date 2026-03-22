@@ -23,8 +23,11 @@ class Anomaly(Base):
     tenant_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
     )
-    email_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("emails.id", ondelete="CASCADE"), nullable=False
+    email_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("emails.id", ondelete="CASCADE"), nullable=True
+    )
+    document_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), nullable=True
     )
     da_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
@@ -47,6 +50,7 @@ class Anomaly(Base):
 
     tenant = relationship("Tenant")
     email = relationship("Email")
+    document = relationship("Document")
     disbursement_account = relationship("DisbursementAccount")
     port_call = relationship("PortCall")
 

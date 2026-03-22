@@ -51,11 +51,20 @@ function RootLayout() {
   );
 }
 
+function HydrateFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
+      <div className="size-8 animate-spin rounded-full border-2 border-mint-200 border-t-mint-500" />
+    </div>
+  );
+}
+
 export const router = createBrowserRouter([
   {
     path: "/",
     Component: RootLayout,
     errorElement: <ErrorPage />,
+    hydrateFallbackElement: <HydrateFallback />,
     children: [
       {
         path: "login",

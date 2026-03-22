@@ -3,6 +3,7 @@ from app.models.audit_log import AuditLog
 from app.models.discrepancy import Discrepancy
 from app.models.base import Base
 from app.models.disbursement_account import DisbursementAccount
+from app.models.document import Document
 from app.models.email import Email
 from app.models.emission_report import EmissionReport, FuelEntry
 from app.models.mail_connection import MailConnection
@@ -32,6 +33,7 @@ __all__ = [
     "ParseJob",
     "Tariff",
     "DisbursementAccount",
+    "Document",
     "MailConnection",
     "EmissionReport",
     "FuelEntry",

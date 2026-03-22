@@ -38,11 +38,24 @@ class DocumentCategory(str, Enum):
     NOON_REPORT = "noon_report"
 
 
+class DocumentResponse(BaseModel):
+    """Document list item for port call documents tab."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    port_call_id: uuid.UUID
+    filename: str
+    category: str | None = None
+    processing_status: str
+    created_at: datetime
+
+
 class DocumentUploadResponse(BaseModel):
     """Response after manual document upload."""
 
-    job_id: uuid.UUID
-    email_id: uuid.UUID
+    job_id: uuid.UUID | None = None  # None when status=already_processed
+    document_id: uuid.UUID
     status: str = "pending"
 
 

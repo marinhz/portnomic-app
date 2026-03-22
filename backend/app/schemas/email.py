@@ -1,7 +1,9 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_serializer
+
+from app.utils.email_headers import decode_mime_header
 
 
 class EmailCreate(BaseModel):
@@ -18,7 +20,15 @@ class EmailUpdate(BaseModel):
     port_call_id: uuid.UUID | None = None
 
 
-class EmailResponse(BaseModel):
+class _EmailSubjectSenderMixin:
+    """Decode MIME encoded subject/sender for display."""
+
+    @field_serializer("subject", "sender")
+    def _decode_header(self, v: str | None) -> str | None:
+        return decode_mime_header(v)
+
+
+class EmailResponse(BaseModel, _EmailSubjectSenderMixin):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
@@ -38,7 +48,7 @@ class EmailResponse(BaseModel):
     emission_report_id: uuid.UUID | None = None
 
 
-class EmailListResponse(BaseModel):
+class EmailListResponse(BaseModel, _EmailSubjectSenderMixin):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID

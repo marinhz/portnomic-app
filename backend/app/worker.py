@@ -17,7 +17,7 @@ from app.middleware.logging_middleware import setup_logging
 setup_logging(settings.log_level)
 from app.services.email_ingest import poll_imap
 from app.services.llm_client import is_transient_error
-from app.services.parse_worker import process_email
+from app.services.parse_worker import process_document, process_email
 
 logger = logging.getLogger("shipflow.worker")
 
@@ -25,16 +25,68 @@ logger = logging.getLogger("shipflow.worker")
 async def process_parse_job(ctx: dict, job_payload: str) -> None:
     """Process a single parse job from the queue.
 
-    job_payload format: "{job_id}:{email_id}:{tenant_id}" or
-    "{job_id}:{email_id}:{tenant_id}:1" for single attempt (no retries on ingest), or
-    "{job_id}:{email_id}:{tenant_id}:emission" to force emission (Noon/Bunker) parsing.
+    Email payload: "{job_id}:{email_id}:{tenant_id}" or
+    "{job_id}:{email_id}:{tenant_id}:1" (single attempt) or
+    "{job_id}:{email_id}:{tenant_id}:emission" (force emission).
+    Document payload: "{job_id}:doc:{document_id}:{tenant_id}" or
+    "{job_id}:doc:{document_id}:{tenant_id}:emission".
     """
     parts = job_payload.split(":")
-    if len(parts) not in (3, 4):
+    if len(parts) < 3:
         logger.error("Invalid job payload: %s", job_payload)
         return
 
     job_id = uuid.UUID(parts[0])
+    is_document_job = len(parts) >= 4 and parts[1] == "doc"
+
+    if is_document_job:
+        document_id = uuid.UUID(parts[2])
+        tenant_id = uuid.UUID(parts[3])
+        force_emission = len(parts) >= 5 and parts[4] == "emission"
+        max_retries = settings.llm_max_retries
+        attempt = 0
+        while attempt <= max_retries:
+            async with async_session_factory() as db:
+                try:
+                    await process_document(
+                        db, document_id, job_id, force_emission=force_emission
+                    )
+                    await db.commit()
+                    return
+                except Exception as exc:
+                    await db.rollback()
+                    if is_transient_error(exc) and attempt < max_retries:
+                        attempt += 1
+                        wait = 2**attempt
+                        logger.warning(
+                            "Transient error on document %s (attempt %d/%d), retrying in %ds: %s",
+                            document_id,
+                            attempt,
+                            max_retries,
+                            wait,
+                            exc,
+                        )
+                        await asyncio.sleep(wait)
+                        continue
+                    logger.exception(
+                        "Failed to process document %s after %d attempts",
+                        document_id,
+                        attempt,
+                    )
+                    async with async_session_factory() as fail_db:
+                        from app.services.document_service import update_document_status
+
+                        await update_document_status(
+                            fail_db,
+                            document_id,
+                            processing_status="failed",
+                            error_reason=f"Max retries exceeded: {exc}",
+                            increment_retry=True,
+                        )
+                        await fail_db.commit()
+                    return
+        return
+
     email_id = uuid.UUID(parts[1])
     single_attempt = len(parts) == 4 and parts[3] == "1"
     force_emission = len(parts) == 4 and parts[3] == "emission"

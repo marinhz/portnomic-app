@@ -37,6 +37,11 @@ class EmissionReport(Base):
         ForeignKey("emails.id", ondelete="SET NULL"),
         nullable=True,
     )
+    document_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("documents.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     report_date: Mapped[date] = mapped_column(Date, nullable=False)
     distance_nm: Mapped[float | None] = mapped_column(Float, nullable=True)
     extracted_at: Mapped[datetime] = mapped_column(
@@ -56,6 +61,7 @@ class EmissionReport(Base):
     vessel = relationship("Vessel")
     port_call = relationship("PortCall")
     email = relationship("Email")
+    document = relationship("Document")
     fuel_entries = relationship(
         "FuelEntry",
         back_populates="emission_report",
