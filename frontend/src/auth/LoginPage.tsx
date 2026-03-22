@@ -222,17 +222,6 @@ export function LoginPage() {
             </>
           )}
         </div>
-
-        <footer className="mt-8 flex justify-center text-sm text-white/80">
-          <a
-            href="https://portnomic.com/privacy-policy"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline transition-colors hover:text-mint-300"
-          >
-            Privacy Policy
-          </a>
-        </footer>
       </div>
     </div>
   );
