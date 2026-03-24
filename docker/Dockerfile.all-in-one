@@ -80,7 +80,7 @@ COPY --from=frontend-builder /build/dist /usr/share/nginx/html
 COPY docker/nginx-all-in-one.conf /etc/nginx/nginx.conf
 COPY docker/supervisord.conf /etc/supervisor/supervisord.conf
 COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 # Fix nginx config ownership (nginx may run as root in container)
 RUN chown -R appuser:appuser /usr/share/nginx/html

@@ -77,6 +77,7 @@ def build_google_auth_url(state: str) -> str:
         "response_type": "code",
         "scope": GOOGLE_SCOPES,
         "access_type": "offline",
+        "include_granted_scopes": "true",
         "prompt": "consent",
         "state": state,
     }
