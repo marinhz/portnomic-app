@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Outlet, Link, useNavigate } from "react-router";
+import { useState, useEffect, useLayoutEffect } from "react";
+import { Outlet, Link, useNavigate, useLocation } from "react-router";
 import { Menu, Sun, Moon, ChevronDown, User, Users, Shield, Building2, LogOut } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
@@ -23,9 +23,15 @@ function getInitialCollapsed(): boolean {
 export function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { theme, toggle: toggleTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(getInitialCollapsed);
+
+  /** Close mobile drawer + scrim on navigation so the backdrop cannot block the next screen (e.g. after login redirect). */
+  useLayoutEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   const hasAdminUsers = user?.permissions.includes("admin:users") ?? false;
   const hasAdminRoles = user?.permissions.includes("admin:roles") ?? false;
@@ -87,7 +93,7 @@ export function AppLayout() {
               )}
             </button>
 
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
