@@ -42,6 +42,7 @@ import { LeakageDetectorPage } from "./pages/leakage/LeakageDetectorPage";
 import { PlatformAdminRoute } from "./auth/PlatformAdminRoute";
 import { PortDirectory } from "./pages/directory/PortDirectory";
 import { TariffConfig } from "./pages/directory/TariffConfig";
+import { TermsOfServicePage } from "./pages/TermsOfService";
 
 function RootLayout() {
   return (
@@ -69,6 +70,10 @@ export const router = createBrowserRouter([
       {
         path: "login",
         Component: LoginPage,
+      },
+      {
+        path: "terms-of-service",
+        Component: TermsOfServicePage,
       },
       {
         Component: ProtectedRoute,
